@@ -1,0 +1,52 @@
+### IntelliJ IDEA ###
+.idea/
+*.iml
+*.iws
+out/
+.idea_modules/
+
+### Java ###
+*.class
+*.jar
+*.war
+*.ear
+*.log
+hs_err_pid*
+*.hprof
+
+### Gradle ###
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+### Maven ###
+target/
+
+### Spring Boot ###
+*.pid
+
+### Logs ###
+*.log
+
+### OS files ###
+.DS_Store
+Thumbs.db
+
+### Temporary files ###
+*.swp
+*.swo
+*~
+
+### Test reports ###
+/test-output/
+/surefire-reports/
+/failsafe-reports/
+
+### Eclipse (if ever opened there) ###
+.project
+.classpath
+.settings/
+
+### VS Code (if opened there) ###
+.vscode/
+

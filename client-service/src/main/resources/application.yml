@@ -9,7 +9,6 @@ spring:
   jpa:
     hibernate:
       ddl-auto: none
-    show-sql: true
   h2:
     console:
       enabled: true
@@ -27,8 +26,3 @@ eureka:
     service-url:
       defaultZone: http://localhost:8761/eureka/
 
-
-logging:
-  level:
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql: TRACE

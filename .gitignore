@@ -25,9 +25,6 @@ target/
 ### Spring Boot ###
 *.pid
 
-### Logs ###
-*.log
-
 ### OS files ###
 .DS_Store
 Thumbs.db
@@ -50,3 +47,4 @@ Thumbs.db
 ### VS Code (if opened there) ###
 .vscode/
 
+*.db

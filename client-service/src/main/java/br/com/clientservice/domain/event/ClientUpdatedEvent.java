@@ -2,6 +2,6 @@ package br.com.clientservice.domain.event;
 
 import br.com.clientservice.domain.dto.ClientOutputDTO;
 
-public record ClientCreatedEvent(ClientOutputDTO client) {
+public record ClientUpdatedEvent(ClientOutputDTO client) {
 
 }

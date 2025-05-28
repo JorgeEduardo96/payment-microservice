@@ -1,14 +1,15 @@
 package br.com.clientservice.api.controller;
 
+import br.com.clientservice.domain.dto.ClientCreateInputDTO;
 import br.com.clientservice.domain.dto.ClientOutputDTO;
+import br.com.clientservice.domain.dto.ClientUpdateInputDTO;
 import br.com.clientservice.domain.service.ClientService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -19,10 +20,20 @@ public class ClientController {
 
     private final ClientService service;
 
-    @GetMapping
-    public ResponseEntity<List<ClientOutputDTO>> fetchAllClients() {
-        var test = new ClientOutputDTO(UUID.randomUUID(), "Jorge", "jorge@email.com", "123", LocalDate.now(), LocalDate.now());
-        return ResponseEntity.ok(List.of(test));
+    @GetMapping("/{id}")
+    public ResponseEntity<List<ClientOutputDTO>> fetchClientById(@PathVariable UUID id) {
+        return ResponseEntity.ok(List.of(service.findClient(id)));
+    }
+
+    @PostMapping
+    public ResponseEntity<ClientOutputDTO> createClient(@RequestBody @Valid ClientCreateInputDTO clientCreateInputDTO) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.insert(clientCreateInputDTO));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<ClientOutputDTO> updateClient(@PathVariable UUID id, @RequestBody @Valid ClientUpdateInputDTO clientUpdateInputDTO) {
+        ClientOutputDTO updatedClient = service.update(id, clientUpdateInputDTO);
+        return ResponseEntity.ok(updatedClient);
     }
 
 }

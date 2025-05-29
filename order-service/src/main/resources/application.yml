@@ -1,3 +1,5 @@
+# src/main/resources/application.yml
+
 spring:
   application:
     name: order-service
@@ -15,6 +17,16 @@ spring:
       path: /h2-console
   kafka:
     bootstrap-servers: localhost:9092
+    consumer:
+      group-id: order-service-group
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "br.com.clientservice.model.*, br.com.orderservice.model.*, br.com.clientservice.events.*, br.com.orderservice.events.*"
+      auto-offset-reset: earliest
+      enable-auto-commit: true
+      auto-commit-interval: 100
+      max-poll-records: 500
   liquibase:
     change-log: classpath:db/changelog/db.changelog-master.yaml
 
@@ -25,5 +37,3 @@ eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
-
-

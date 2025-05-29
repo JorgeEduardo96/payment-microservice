@@ -15,6 +15,8 @@ spring:
       path: /h2-console
   kafka:
     bootstrap-servers: localhost:9092
+    producer:
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
   liquibase:
     change-log: classpath:db/changelog/db.changelog-master.yaml
 

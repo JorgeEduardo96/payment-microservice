@@ -1,8 +1,9 @@
-package br.com.clientservice.domain.entity;
+package br.com.orderservice.domain.entity;
 
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -10,21 +11,18 @@ import java.util.UUID;
 public class ClientJpaEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @Column(unique = true)
     private String name;
 
-    @Column(unique = true)
-    private String email;
-
-    private String cpf;
-
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
+
+    @OneToMany(mappedBy = "client")
+    private List<OrderJpaEntity> orders;
 
     public UUID getId() {
         return id;
@@ -42,22 +40,6 @@ public class ClientJpaEntity {
         this.name = name;
     }
 
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getCpf() {
-        return cpf;
-    }
-
-    public void setCpf(String cpf) {
-        this.cpf = cpf;
-    }
-
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
@@ -72,5 +54,13 @@ public class ClientJpaEntity {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public List<OrderJpaEntity> getOrders() {
+        return orders;
+    }
+
+    public void setOrders(List<OrderJpaEntity> orders) {
+        this.orders = orders;
     }
 }

@@ -1,7 +1,10 @@
 package br.com.orderservice.domain.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-public record ClientEventDTO(UUID id, String name, String email, String cpf, LocalDateTime createdAt, LocalDateTime updatedAt) {
+@JsonIgnoreProperties(ignoreUnknown = true)
+public record ClientEventDTO(UUID id, String name, LocalDateTime createdAt, LocalDateTime updatedAt) {
 }

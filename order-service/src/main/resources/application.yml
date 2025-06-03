@@ -29,6 +29,13 @@ spring:
 server:
   port: 8082
 
+grpc:
+  server:
+    port: -1
+  client:
+    payment-service:
+      negotiation-type: plaintext
+
 eureka:
   client:
     service-url:

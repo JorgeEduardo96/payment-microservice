@@ -1,11 +1,17 @@
 package br.com.orderservice.domain.repository.jpa;
 
 import br.com.orderservice.domain.dto.OrderInputDTO;
+import br.com.orderservice.domain.dto.OrderOutputDTO;
+import br.com.orderservice.domain.entity.OrderJpaEntity;
+import br.com.orderservice.domain.enumeration.OrderStatus;
+import br.com.orderservice.domain.exception.EntityNotFoundException;
 import br.com.orderservice.domain.repository.OrderRepository;
 import br.com.orderservice.domain.repository.jpa.crudrepository.OrderJpaEntityCrudRepository;
 import br.com.orderservice.mapper.OrderMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
@@ -15,7 +21,17 @@ public class OrderRepositoryImpl implements OrderRepository {
     private final OrderJpaEntityCrudRepository repository;
 
     @Override
-    public void createOrder(OrderInputDTO dto) {
-        repository.save(mapper.toEntity(dto));
+    public OrderOutputDTO createOrder(OrderInputDTO dto) {
+        OrderJpaEntity entity = mapper.toEntity(dto);
+        entity.applyDiscount();
+        return mapper.toDto(repository.save(entity));
+    }
+
+    @Override
+    public void processPayment(UUID orderId, OrderStatus status) {
+        var entity = repository.findById(orderId)
+                .orElseThrow(() -> new EntityNotFoundException("Order", orderId));
+        entity.setStatus(status);
+        repository.save(entity);
     }
 }

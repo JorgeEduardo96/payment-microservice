@@ -8,6 +8,7 @@ import lombok.Getter;
 public enum OrderStatus {
 
     PENDING_PAYMENT("Pending Payment"),
+    FAILED("Failed"),
     PAID("Paid");
 
     private final String description;

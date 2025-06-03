@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -30,7 +31,7 @@ public class OrderJpaEntity {
     private OrderStatus status;
 
     private String notes;
-    
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 
@@ -38,8 +39,10 @@ public class OrderJpaEntity {
     @JoinColumn(name = "client_id", nullable = false)
     private ClientJpaEntity client;
 
-    private void confirmPayment() {
-        this.status = OrderStatus.PAID;
+    public void applyDiscount() {
+        BigDecimal percentual = paymentMethod.appliedDiscount().divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+        BigDecimal discountValue = this.total.multiply(percentual);
+        this.total = this.total.subtract(discountValue).setScale(2, RoundingMode.HALF_UP);
     }
 
     public UUID getId() {
@@ -96,5 +99,13 @@ public class OrderJpaEntity {
 
     public void setStatus(OrderStatus status) {
         this.status = status;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 }

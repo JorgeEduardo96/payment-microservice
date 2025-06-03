@@ -1,6 +1,7 @@
 package br.com.orderservice.mapper;
 
 import br.com.orderservice.domain.dto.OrderInputDTO;
+import br.com.orderservice.domain.dto.OrderOutputDTO;
 import br.com.orderservice.domain.entity.ClientJpaEntity;
 import br.com.orderservice.domain.entity.OrderJpaEntity;
 import org.mapstruct.Mapper;
@@ -14,6 +15,9 @@ public interface OrderMapper {
     @Mapping(source = "clientId", target = "client", qualifiedByName = "mapClientIdToClient")
     @Mapping(target = "status", expression = "java(br.com.orderservice.domain.enumeration.OrderStatus.PENDING_PAYMENT)")
     OrderJpaEntity toEntity(OrderInputDTO dto);
+
+    @Mapping(target = "clientName", ignore = true)
+    OrderOutputDTO toDto(OrderJpaEntity entity);
 
     @Named("mapClientIdToClient")
     static ClientJpaEntity mapClientIdToClient(java.util.UUID clientId) {

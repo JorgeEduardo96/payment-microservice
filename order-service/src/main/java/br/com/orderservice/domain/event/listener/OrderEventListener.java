@@ -27,5 +27,4 @@ public class OrderEventListener {
                 .build());
         log.info("Payment process sent for order: {}", event.orderOutputDTO().id());
     }
-
 }

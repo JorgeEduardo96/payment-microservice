@@ -12,6 +12,9 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.UUID;
+
 @Service
 @RequiredArgsConstructor
 public class OrderService {
@@ -41,6 +44,14 @@ public class OrderService {
                 .paymentMethod(dto.paymentMethod())
                 .status(dto.status())
                 .build();
+    }
+
+    public List<OrderOutputDTO> getOrdersByClientId(UUID clientId) {
+        var client = clientRepository.findById(clientId);
+        if (client.isEmpty()) {
+            throw new EntityNotFoundException("Client", clientId);
+        }
+        return repository.ordersByClientId(clientId);
     }
 
 }

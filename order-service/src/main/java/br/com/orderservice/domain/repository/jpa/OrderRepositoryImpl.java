@@ -11,7 +11,9 @@ import br.com.orderservice.mapper.OrderMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
@@ -33,5 +35,18 @@ public class OrderRepositoryImpl implements OrderRepository {
                 .orElseThrow(() -> new EntityNotFoundException("Order", orderId));
         entity.setStatus(status);
         repository.save(entity);
+    }
+
+    @Override
+    public List<OrderOutputDTO> ordersByClientId(UUID clientId) {
+        return repository.findByClientId(clientId).stream()
+                .map(order -> new OrderOutputDTO(
+                        order.getId(),
+                        order.getTotal(),
+                        order.getShippingAddress(),
+                        order.getClient().getName(),
+                        order.getStatus(),
+                        order.getPaymentMethod()))
+                .collect(Collectors.toList());
     }
 }

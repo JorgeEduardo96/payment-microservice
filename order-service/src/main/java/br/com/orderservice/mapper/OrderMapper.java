@@ -12,7 +12,8 @@ import org.mapstruct.Named;
 public interface OrderMapper {
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(source = "clientId", target = "client", qualifiedByName = "mapClientIdToClient")
+    @Mapping(target = "client", qualifiedByName = "mapClientIdToClient", source = "clientId")
+    @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "status", expression = "java(br.com.orderservice.domain.enumeration.OrderStatus.PENDING_PAYMENT)")
     OrderJpaEntity toEntity(OrderInputDTO dto);
 

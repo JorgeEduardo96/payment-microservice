@@ -22,7 +22,7 @@ public class ClientProducer {
     @CircuitBreaker(name = "kafkaProducer", fallbackMethod = "fallbackSend")
     public void sendClientEvent(String topic, ClientOutputDTO client) throws Exception {
         String payload = objectMapper.writeValueAsString(client);
-        kafkaTemplate.send(topic, payload).get(); // isso pode lançar ExecutionException
+        kafkaTemplate.send(topic, payload).get();
         log.info("Client {} sent successfully to topic {}", client, topic);
     }
 

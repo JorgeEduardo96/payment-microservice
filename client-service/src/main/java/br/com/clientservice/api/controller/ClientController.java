@@ -10,7 +10,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -21,8 +20,8 @@ public class ClientController {
     private final ClientService service;
 
     @GetMapping("/{id}")
-    public ResponseEntity<List<ClientOutputDTO>> fetchClientById(@PathVariable UUID id) {
-        return ResponseEntity.ok(List.of(service.findClient(id)));
+    public ResponseEntity<ClientOutputDTO> fetchClientById(@PathVariable UUID id) {
+        return ResponseEntity.ok(service.findClient(id));
     }
 
     @PostMapping

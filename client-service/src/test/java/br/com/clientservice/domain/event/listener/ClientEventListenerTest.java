@@ -24,7 +24,7 @@ public class ClientEventListenerTest {
     private ClientEventListener underTest;
 
     @Test
-    void handleClientCreated() {
+    void handleClientCreated() throws Exception {
         var client = mock(ClientOutputDTO.class);
         when(client.id()).thenReturn(UUID.randomUUID());
         var event = new ClientCreatedEvent(client);
@@ -35,7 +35,7 @@ public class ClientEventListenerTest {
     }
 
     @Test
-    void handleClientUpdated() {
+    void handleClientUpdated() throws Exception {
         var client = mock(ClientOutputDTO.class);
         when(client.id()).thenReturn(UUID.randomUUID());
         var event = new ClientUpdatedEvent(client);

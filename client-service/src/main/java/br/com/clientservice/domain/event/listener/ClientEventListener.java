@@ -18,14 +18,14 @@ public class ClientEventListener {
     private final ClientProducer producer;
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void handleClientCreated(ClientCreatedEvent event) {
+    public void handleClientCreated(ClientCreatedEvent event) throws Exception {
         ClientOutputDTO client = event.client();
         log.info("AFTER COMMIT: Sending kafka event for client: {}", client.id());
         producer.sendClientEvent("client-created-topic", client);
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void handleClientUpdated(ClientUpdatedEvent event) {
+    public void handleClientUpdated(ClientUpdatedEvent event) throws Exception {
         ClientOutputDTO client = event.client();
         log.info("AFTER COMMIT: Sending kafka event for updated client: {}", client.id());
         producer.sendClientEvent("client-updated-topic", client);

@@ -1,12 +1,14 @@
 package br.com.clientservice.messaging.producer;
 
 import br.com.clientservice.domain.dto.ClientOutputDTO;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 @Service
+@Slf4j
 public class ClientProducer {
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
@@ -17,12 +19,16 @@ public class ClientProducer {
         this.objectMapper = objectMapper;
     }
 
-    public void sendClientEvent(String topic, ClientOutputDTO client) {
-        try {
-            kafkaTemplate.send(topic, objectMapper.writeValueAsString(client));
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException("Failed to serialize ClientEventDTO", e);
-        }
+    @CircuitBreaker(name = "kafkaProducer", fallbackMethod = "fallbackSend")
+    public void sendClientEvent(String topic, ClientOutputDTO client) throws Exception {
+        String payload = objectMapper.writeValueAsString(client);
+        kafkaTemplate.send(topic, payload).get(); // isso pode lançar ExecutionException
+        log.info("Client {} sent successfully to topic {}", client, topic);
+    }
+
+    @SuppressWarnings("unused")
+    public void fallbackSend(String topic, ClientOutputDTO client, Throwable throwable) {
+        log.warn("Fallback enabled - Kafka is unavailable. Client: {}", client);
     }
 
 }

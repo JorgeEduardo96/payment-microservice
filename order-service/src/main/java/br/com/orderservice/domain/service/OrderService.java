@@ -43,15 +43,4 @@ public class OrderService {
                 .build();
     }
 
-//    @Transactional(propagation = Propagation.REQUIRES_NEW)
-//    public void processPayment(PaymentResponse paymentResponse) {
-//        var orderId = UUID.fromString(paymentResponse.getPaymentId());
-//
-//        if (repository.findById(orderId).isEmpty()) {
-//            throw new EntityNotFoundException("Order", orderId);
-//        }
-//
-//        repository.processPayment(orderId, OrderStatus.valueOf(paymentResponse.getStatus().toUpperCase()));
-//    }
-
 }

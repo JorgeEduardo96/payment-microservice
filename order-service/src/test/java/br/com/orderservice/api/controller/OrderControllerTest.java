@@ -11,9 +11,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import java.util.List;
+import java.util.UUID;
+
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class OrderControllerTest {
@@ -35,6 +37,20 @@ public class OrderControllerTest {
 
         assertThat(result.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(result.getBody()).isEqualTo(expectedResult);
+    }
+
+    @Test
+    void getOrdersByClient() {
+        var clientId = UUID.randomUUID();
+        var expectedResult = mock(List.class);
+
+        when(orderService.getOrdersByClientId(clientId)).thenReturn(expectedResult);
+
+        var result = underTest.getOrdersByClient(clientId);
+
+        assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(result.getBody()).isEqualTo(expectedResult);
+        verify(orderService).getOrdersByClientId(clientId);
     }
 
 }

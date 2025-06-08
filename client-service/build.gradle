@@ -71,14 +71,18 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.kafka:spring-kafka-test'
     testImplementation 'com.h2database:h2'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    integrationImplementation 'org.springframework.boot:spring-boot-starter-test'
+    integrationImplementation 'org.testcontainers:testcontainers:1.19.3'
+    integrationImplementation 'org.testcontainers:kafka:1.19.3'
+    integrationImplementation 'org.testcontainers:junit-jupiter:1.19.3'
+
+    // Annotation processors
     testCompileOnly 'org.projectlombok:lombok:1.18.28'
     testAnnotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
     testAnnotationProcessor 'org.projectlombok:lombok:1.18.28'
     integrationAnnotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
     integrationAnnotationProcessor 'org.projectlombok:lombok:1.18.28'
-
-    integrationImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
 
 dependencyManagement {

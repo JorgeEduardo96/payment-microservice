@@ -1,6 +1,9 @@
-package br.com.clientservice.api.exceptionhandler;
+package br.com.orderservice.api.controller.exceptionhandler;
 
-import br.com.clientservice.domain.exception.EntityNotFoundException;
+
+import br.com.orderservice.api.exceptionhandler.ApiExceptionHandler;
+import br.com.orderservice.api.exceptionhandler.Problem;
+import br.com.orderservice.domain.exception.EntityNotFoundException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -20,6 +23,7 @@ import org.springframework.web.context.request.WebRequest;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -91,7 +95,7 @@ class ApiExceptionHandlerTest {
 
     @Test
     void handleEntityNotFoundException_shouldReturnNotFoundWithProblemDetails() {
-        EntityNotFoundException exception = new EntityNotFoundException("Entity", "123");
+        EntityNotFoundException exception = new EntityNotFoundException("Entity", UUID.randomUUID());
 
         ResponseEntity<Object> response = underTest.handleEntityNotFoundException(exception, request);
 

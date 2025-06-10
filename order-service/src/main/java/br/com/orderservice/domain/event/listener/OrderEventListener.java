@@ -24,6 +24,7 @@ public class OrderEventListener {
                 .setOrderId(outputDTO.id().toString())
                 .setAmount(outputDTO.total().doubleValue())
                 .setPaymentMethod(outputDTO.paymentMethod().getDescription())
+                .setClientId(outputDTO.clientId().toString())
                 .build());
         log.info("Payment process sent for order: {}", event.orderOutputDTO().id());
     }

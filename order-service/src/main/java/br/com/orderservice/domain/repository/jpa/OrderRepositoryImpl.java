@@ -40,13 +40,15 @@ public class OrderRepositoryImpl implements OrderRepository {
     @Override
     public List<OrderOutputDTO> ordersByClientId(UUID clientId) {
         return repository.findByClientId(clientId).stream()
-                .map(order -> new OrderOutputDTO(
-                        order.getId(),
-                        order.getTotal(),
-                        order.getShippingAddress(),
-                        order.getClient().getName(),
-                        order.getStatus(),
-                        order.getPaymentMethod()))
+                .map(order -> OrderOutputDTO.builder()
+                        .id(order.getId())
+                        .total(order.getTotal())
+                        .shippingAddress(order.getShippingAddress())
+                        .clientName(order.getClient().getName())
+                        .status(order.getStatus())
+                        .paymentMethod(order.getPaymentMethod())
+                        .build()
+                )
                 .collect(Collectors.toList());
     }
 }

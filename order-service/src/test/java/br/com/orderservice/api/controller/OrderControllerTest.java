@@ -40,6 +40,7 @@ public class OrderControllerTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void getOrdersByClient() {
         var clientId = UUID.randomUUID();
         var expectedResult = mock(List.class);

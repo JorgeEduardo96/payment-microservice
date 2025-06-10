@@ -1,6 +1,7 @@
 package br.com.orderservice.domain.repository.jpa.crudrepository;
 
 import br.com.orderservice.domain.entity.OrderJpaEntity;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -10,6 +11,7 @@ import java.util.UUID;
 @Repository
 public interface OrderJpaEntityCrudRepository extends JpaRepository<OrderJpaEntity, UUID> {
 
+    @EntityGraph(attributePaths = "client")
     List<OrderJpaEntity> findByClientId(UUID clientId);
 
 }

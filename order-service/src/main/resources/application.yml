@@ -26,6 +26,12 @@ spring:
   liquibase:
     change-log: classpath:db/changelog/db.changelog-master.yaml
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
 server:
   port: 8082
 
@@ -40,3 +46,14 @@ eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
+
+resilience4j:
+  retry:
+    instances:
+      defaultConsumerRetry:
+        max-attempts: 3
+        wait-duration: 1000ms
+        retry-exceptions:
+          - java.io.IOException
+          - com.fasterxml.jackson.core.JsonProcessingException
+          - org.springframework.dao.DataAccessException

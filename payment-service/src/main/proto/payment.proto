@@ -14,4 +14,5 @@ message PaymentRequest {
   string orderId = 1;
   double amount = 2;
   string paymentMethod = 3;
+  string clientId = 4;
 }

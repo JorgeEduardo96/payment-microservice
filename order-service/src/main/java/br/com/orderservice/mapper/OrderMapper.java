@@ -17,6 +17,7 @@ public interface OrderMapper {
     @Mapping(target = "status", expression = "java(br.com.orderservice.domain.enumeration.OrderStatus.PENDING_PAYMENT)")
     OrderJpaEntity toEntity(OrderInputDTO dto);
 
+    @Mapping(target = "clientId", ignore = true)
     @Mapping(target = "clientName", ignore = true)
     OrderOutputDTO toDto(OrderJpaEntity entity);
 

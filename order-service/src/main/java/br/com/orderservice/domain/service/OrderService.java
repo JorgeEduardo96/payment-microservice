@@ -1,6 +1,5 @@
 package br.com.orderservice.domain.service;
 
-import br.com.orderservice.domain.dto.ClientEventDTO;
 import br.com.orderservice.domain.dto.OrderInputDTO;
 import br.com.orderservice.domain.dto.OrderOutputDTO;
 import br.com.orderservice.domain.event.OrderCreatedEvent;
@@ -25,25 +24,17 @@ public class OrderService {
 
     @Transactional
     public OrderOutputDTO createOrder(OrderInputDTO dto) {
-        var client = clientRepository.findById(dto.clientId());
-        if (client.isEmpty()) {
+        var optionalClient = clientRepository.findById(dto.clientId());
+        if (optionalClient.isEmpty()) {
             throw new EntityNotFoundException("Client", dto.clientId());
         }
         var outputDTO = repository.createOrder(dto);
-        OrderOutputDTO response = buildOutputDTO(outputDTO, client.get());
-        publisher.publishEvent(new OrderCreatedEvent(outputDTO));
-        return response;
-    }
+        var client = optionalClient.get();
 
-    private OrderOutputDTO buildOutputDTO(OrderOutputDTO dto, ClientEventDTO clientEventDTO) {
-        return OrderOutputDTO.builder()
-                .id(dto.id())
-                .clientName(clientEventDTO.name())
-                .total(dto.total())
-                .shippingAddress(dto.shippingAddress())
-                .paymentMethod(dto.paymentMethod())
-                .status(dto.status())
-                .build();
+        var response = new OrderOutputDTO(outputDTO.id(), outputDTO.total(), outputDTO.shippingAddress(),
+                client.id(), client.name(), outputDTO.status(), outputDTO.paymentMethod());
+        publisher.publishEvent(new OrderCreatedEvent(response));
+        return response;
     }
 
     public List<OrderOutputDTO> getOrdersByClientId(UUID clientId) {

@@ -4,11 +4,11 @@ import br.com.clientservice.domain.dto.ClientOutputDTO;
 import br.com.clientservice.messaging.producer.ClientProducer;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.test.context.EmbeddedKafka;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -21,13 +21,12 @@ import static org.mockito.Mockito.when;
 @SpringBootTest
 @EmbeddedKafka(partitions = 1, topics = {"client-created-topic", "client-updated-topic"})
 @EnableKafka
-@SuppressWarnings("removal")
 public class ClientProducerFallbackIntegrationTest {
 
-    @SpyBean
+    @MockitoSpyBean
     private ClientProducer clientProducer;
 
-    @MockBean
+    @MockitoBean
     private KafkaTemplate<String, Object> kafkaTemplate;
 
     @Test

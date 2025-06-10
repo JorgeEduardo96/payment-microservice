@@ -23,6 +23,6 @@ public class NotificationProperties {
 
 
     public enum NotificationType {
-        EMAIL, SMS, PUSH, FAKE
+        EMAIL, FAKE
     }
 }

@@ -26,10 +26,12 @@ public class PaymentServiceImpl extends PaymentServiceGrpc.PaymentServiceImplBas
     public void processPayment(PaymentRequest request, StreamObserver<Empty> responseObserver) {
         var orderId = request.getOrderId();
         var status = isLastCharacterLetter(orderId) ? "PAID" : "FAILED";
+        var paymentMethod = request.getPaymentMethod();
         var clientId = request.getClientId();
 
         logger.info(String.format("Processing payment for orderId: %s", orderId));
-        paymentProducer.sendPaymentEvent("payment-topic", new PaymentResponseDTO(UUID.fromString(orderId), status, UUID.fromString(clientId)));
+        paymentProducer.sendPaymentEvent("payment-topic", new PaymentResponseDTO(UUID.fromString(orderId),
+                status, paymentMethod, UUID.fromString(clientId)));
 
         responseObserver.onNext(Empty.getDefaultInstance());
         responseObserver.onCompleted();

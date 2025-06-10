@@ -41,6 +41,7 @@ public class OrderServiceTest {
     @Test
     void createOrder() {
         var orderId = UUID.randomUUID();
+        var clientId = UUID.randomUUID();
         var mockedInput = mock(OrderInputDTO.class);
         var mockedOutput = mock(OrderOutputDTO.class);
         var mockedClient = mock(ClientEventDTO.class);
@@ -48,8 +49,10 @@ public class OrderServiceTest {
         when(clientRepository.findById(mockedInput.clientId())).thenReturn(Optional.of(mockedClient));
         when(repository.createOrder(mockedInput)).thenReturn(mockedOutput);
 
-        when(mockedOutput.id()).thenReturn(orderId);
+        when(mockedClient.id()).thenReturn(clientId);
         when(mockedClient.name()).thenReturn("John Doe");
+
+        when(mockedOutput.id()).thenReturn(orderId);
         when(mockedOutput.total()).thenReturn(new BigDecimal("100.00"));
         when(mockedOutput.shippingAddress()).thenReturn("123 Main St, Springfield");
         when(mockedOutput.paymentMethod()).thenReturn(PaymentMethod.CARD);
@@ -58,13 +61,14 @@ public class OrderServiceTest {
         var result = underTest.createOrder(mockedInput);
 
         assertThat(result.id()).isEqualTo(orderId);
+        assertThat(result.clientId()).isEqualTo(clientId);
         assertThat(result.clientName()).isEqualTo("John Doe");
         assertThat(result.total()).isEqualTo(new BigDecimal("100.00"));
         assertThat(result.shippingAddress()).isEqualTo("123 Main St, Springfield");
         assertThat(result.paymentMethod()).isEqualTo(PaymentMethod.CARD);
         assertThat(result.status()).isEqualTo(OrderStatus.PENDING_PAYMENT);
 
-        verify(publisher).publishEvent(new OrderCreatedEvent(mockedOutput));
+        verify(publisher).publishEvent(any(OrderCreatedEvent.class));
         verify(clientRepository).findById(mockedInput.clientId());
         verify(repository).createOrder(mockedInput);
     }

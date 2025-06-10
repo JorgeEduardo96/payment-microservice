@@ -69,7 +69,7 @@ public class PaymentConsumerIntegrationTest {
 
     @Test
     void shouldConsumePaymentResponseEventAndUpdateOrderStatus() throws Exception {
-        var paymentResponseEvent = new PaymentResponseEventDTO(orderId, "PAID", clientId);
+        var paymentResponseEvent = new PaymentResponseEventDTO(orderId, "PAID", "CARD", clientId);
         var message = objectMapper.writeValueAsString(paymentResponseEvent);
 
         producer.send(new ProducerRecord<>("payment-topic", message));

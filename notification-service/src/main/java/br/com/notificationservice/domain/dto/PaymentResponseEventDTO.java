@@ -2,6 +2,6 @@ package br.com.notificationservice.domain.dto;
 
 import java.util.UUID;
 
-public record PaymentResponseEventDTO(UUID orderId, String status) {
+public record PaymentResponseEventDTO(UUID orderId, String status, String paymentMethod, UUID clientId) {
 
 }

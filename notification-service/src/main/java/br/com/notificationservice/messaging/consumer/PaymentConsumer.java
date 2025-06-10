@@ -1,6 +1,7 @@
 package br.com.notificationservice.messaging.consumer;
 
 import br.com.notificationservice.domain.dto.PaymentResponseEventDTO;
+import br.com.notificationservice.domain.service.NotificationService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.resilience4j.retry.annotation.Retry;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 public class PaymentConsumer {
 
     private final ObjectMapper objectMapper;
+    private final NotificationService notificationService;
 
     @KafkaListener(topics = "payment-topic", groupId = "notification-service-group")
     @Retry(name = "defaultConsumerRetry", fallbackMethod = "fallback")
@@ -22,6 +24,7 @@ public class PaymentConsumer {
         try {
             PaymentResponseEventDTO paymentResponseEventDTO = objectMapper.readValue(message, PaymentResponseEventDTO.class);
             log.info("Received payment event from order: {}", paymentResponseEventDTO.orderId().toString());
+            notificationService.sentNotification(paymentResponseEventDTO);
         } catch (Exception e) {
             System.err.println("Failed to process message: " + e.getMessage());
             throw e;

@@ -29,14 +29,16 @@ public class OrderEventListenerTest {
 
     @Test
     void handleOrderCreated() {
-        UUID orderId = UUID.randomUUID();
-        BigDecimal totalAmount = new BigDecimal("250.75");
-        PaymentMethod paymentMethod = PaymentMethod.CARD;
+        var orderId = UUID.randomUUID();
+        var totalAmount = new BigDecimal("250.75");
+        var paymentMethod = PaymentMethod.CARD;
+        var clientId = UUID.randomUUID();
 
         OrderOutputDTO orderOutputDTO = mock(OrderOutputDTO.class);
         when(orderOutputDTO.id()).thenReturn(orderId);
         when(orderOutputDTO.total()).thenReturn(totalAmount);
         when(orderOutputDTO.paymentMethod()).thenReturn(paymentMethod);
+        when(orderOutputDTO.clientId()).thenReturn(clientId);
 
         OrderCreatedEvent event = new OrderCreatedEvent(orderOutputDTO);
 
@@ -52,6 +54,7 @@ public class OrderEventListenerTest {
         assertThat(capturedRequest.getOrderId()).isEqualTo(orderId.toString());
         assertThat(capturedRequest.getAmount()).isEqualTo(totalAmount.doubleValue());
         assertThat(capturedRequest.getPaymentMethod()).isEqualTo(paymentMethod.getDescription());
+        assertThat(capturedRequest.getClientId()).isEqualTo(clientId.toString());
 
         verifyNoMoreInteractions(paymentGrpcClient);
     }

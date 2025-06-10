@@ -1,12 +1,15 @@
 package br.com.notificationservice.domain.repository.jpa;
 
 import br.com.notificationservice.domain.dto.ClientEventDTO;
+import br.com.notificationservice.domain.exception.EntityNotFoundException;
 import br.com.notificationservice.domain.mapper.ClientMapper;
 import br.com.notificationservice.domain.repository.ClientRepository;
 import br.com.notificationservice.domain.repository.jpa.crudrepository.ClientJpaEntityCrudRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
@@ -28,5 +31,10 @@ public class ClientRepositoryImpl implements ClientRepository {
                 .orElseGet(() -> mapper.toEntity(clientEventDTO));
 
         repository.save(clientEntity);
+    }
+
+    @Override
+    public ClientEventDTO findById(UUID id) {
+        return repository.findById(id).map(mapper::toDto).orElseThrow(() -> new EntityNotFoundException("Client", id));
     }
 }

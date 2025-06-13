@@ -15,7 +15,7 @@ public class NotificationService {
     private final ClientRepository clientRepository;
     private final SendNotification sendNotification;
 
-    public void sentNotification(PaymentResponseEventDTO paymentResponseEventDTO) {
+    public void sendNotification(PaymentResponseEventDTO paymentResponseEventDTO) {
         if ("PAID".equalsIgnoreCase(paymentResponseEventDTO.status())) {
             var client = clientRepository.findById(paymentResponseEventDTO.clientId());
 

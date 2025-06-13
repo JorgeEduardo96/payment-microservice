@@ -47,5 +47,8 @@ resilience4j:
 
 notification-service:
   notification:
-    notification-type: fake
-    host: ${NOTIFICATION_HOST:CREATE_ENV_VARIABLES}
+    notification-type: email
+  sendgrid:
+    api-key: ${SENDGRID_API_KEY:CREATE_ENV_VARIABLES}
+    from-email: ${SENDGRID_FROM_EMAIL:CREATE_ENV_VARIABLES}
+    from-name: ${SENDGRID_FROM_NAME:CREATE_ENV_VARIABLES}

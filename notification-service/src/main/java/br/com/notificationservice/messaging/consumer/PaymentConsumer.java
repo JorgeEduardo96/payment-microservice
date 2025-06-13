@@ -24,9 +24,9 @@ public class PaymentConsumer {
         try {
             PaymentResponseEventDTO paymentResponseEventDTO = objectMapper.readValue(message, PaymentResponseEventDTO.class);
             log.info("Received payment event from order: {}", paymentResponseEventDTO.orderId().toString());
-            notificationService.sentNotification(paymentResponseEventDTO);
+            notificationService.sendNotification(paymentResponseEventDTO);
         } catch (Exception e) {
-            System.err.println("Failed to process message: " + e.getMessage());
+            log.error("Failed to process message: {}", e.getMessage());
             throw e;
         }
     }

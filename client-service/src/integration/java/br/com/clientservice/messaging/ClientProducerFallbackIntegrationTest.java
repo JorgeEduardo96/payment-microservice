@@ -39,6 +39,6 @@ public class ClientProducerFallbackIntegrationTest {
 
         clientProducer.sendClientEvent(topic, dto);
 
-        verify(clientProducer).fallbackSend(eq(topic), eq(dto), any(Throwable.class));
+        verify(clientProducer).fallback(eq(topic), eq(dto), any(Throwable.class));
     }
 }

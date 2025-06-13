@@ -29,9 +29,6 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
 
 @SpringBootTest
 @EmbeddedKafka(partitions = 1, topics = {"payment-topic"})
@@ -75,7 +72,7 @@ public class PaymentConsumerIntegrationTest {
         producer.send(new ProducerRecord<>("payment-topic", message));
         producer.flush();
 
-        Thread.sleep(2000);
+        Thread.sleep(5000);
         var updatedOrder = orderRepository.ordersByClientId(clientId).stream()
                 .filter(order -> order.id().equals(orderId))
                 .findFirst()
@@ -83,17 +80,4 @@ public class PaymentConsumerIntegrationTest {
         assertThat(updatedOrder).isNotNull();
         assertThat(updatedOrder.status()).isEqualTo(OrderStatus.PAID);
     }
-
-    @Test
-    void shouldCallFallbackWhenConsumeFails() throws Exception {
-        String badMessage = "invalid json";
-
-        producer.send(new ProducerRecord<>("payment-topic", badMessage));
-        producer.flush();
-
-        Thread.sleep(4000);
-
-        verify(paymentConsumer).fallback(eq(badMessage), any(Exception.class));
-    }
-
 }

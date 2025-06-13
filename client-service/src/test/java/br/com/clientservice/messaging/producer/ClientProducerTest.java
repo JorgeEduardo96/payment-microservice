@@ -1,7 +1,6 @@
-package br.com.clientservice.domain.messaging.consumer;
+package br.com.clientservice.messaging.producer;
 
 import br.com.clientservice.domain.dto.ClientOutputDTO;
-import br.com.clientservice.messaging.producer.ClientProducer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;

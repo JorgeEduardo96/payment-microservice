@@ -62,7 +62,6 @@ dependencies {
 
     // Resilience4j
     implementation 'io.github.resilience4j:resilience4j-spring-boot3:2.2.0'
-    implementation 'io.github.resilience4j:resilience4j-circuitbreaker:2.2.0'
 
     // H2 Database
     runtimeOnly 'com.h2database:h2'

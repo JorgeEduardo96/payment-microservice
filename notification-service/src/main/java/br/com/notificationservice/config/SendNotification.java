@@ -1,8 +1,8 @@
 package br.com.notificationservice.config;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.NonNull;
 import lombok.Singular;
 
 import java.util.Map;
@@ -18,9 +18,9 @@ public interface SendNotification {
 
         @Singular
         private Set<String> destinations;
-        @NonNull
+        @NotNull
         private String subject;
-        @NonNull
+        @NotNull
         private String body;
 
         @Singular("variable")

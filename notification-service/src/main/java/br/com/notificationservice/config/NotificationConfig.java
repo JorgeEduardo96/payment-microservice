@@ -1,5 +1,6 @@
 package br.com.notificationservice.config;
 
+import br.com.notificationservice.config.properties.NotificationProperties;
 import br.com.notificationservice.domain.service.EmailNotificationService;
 import br.com.notificationservice.domain.service.FakeNotificationService;
 import lombok.RequiredArgsConstructor;

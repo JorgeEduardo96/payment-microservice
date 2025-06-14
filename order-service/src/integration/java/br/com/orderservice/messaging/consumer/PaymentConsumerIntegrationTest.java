@@ -8,8 +8,10 @@ import br.com.orderservice.domain.enumeration.PaymentMethod;
 import br.com.orderservice.domain.repository.ClientRepository;
 import br.com.orderservice.domain.repository.OrderRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,7 +22,6 @@ import org.springframework.kafka.support.serializer.JsonSerializer;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
-import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.math.BigDecimal;
@@ -31,7 +32,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
-@EmbeddedKafka(partitions = 1, topics = {"payment-topic"})
+@EmbeddedKafka(partitions = 1, topics = {"payment-topic", "payment-topic.DLQ"})
 @ExtendWith(SpringExtension.class)
 public class PaymentConsumerIntegrationTest {
 
@@ -43,9 +44,6 @@ public class PaymentConsumerIntegrationTest {
     private ClientRepository clientRepository;
     @Autowired
     private ObjectMapper objectMapper;
-
-    @MockitoSpyBean
-    private PaymentConsumer paymentConsumer;
 
     private KafkaProducer<String, String> producer;
 
@@ -79,5 +77,26 @@ public class PaymentConsumerIntegrationTest {
                 .orElse(null);
         assertThat(updatedOrder).isNotNull();
         assertThat(updatedOrder.status()).isEqualTo(OrderStatus.PAID);
+    }
+
+    @Test
+    void shouldSendMessageToDLQAfterRetries() throws Exception {
+        var invalidMessage = "{ \"orderId\": null, \"paymentMethod\": invalid-payload";
+
+        producer.send(new ProducerRecord<>("payment-topic", invalidMessage));
+        producer.flush();
+
+        Thread.sleep(5000);
+
+        var consumerProps = KafkaTestUtils.consumerProps("test-group", "false", embeddedKafka);
+        try (var consumer = new KafkaConsumer<>(consumerProps, new StringDeserializer(), new StringDeserializer())) {
+            embeddedKafka.consumeFromAnEmbeddedTopic(consumer, "payment-topic.DLQ");
+            var records = KafkaTestUtils.getRecords(consumer);
+
+            assertThat(records.count()).isGreaterThan(0);
+
+            var record = records.iterator().next();
+            assertThat(record.value()).contains("invalid-payload");
+        }
     }
 }

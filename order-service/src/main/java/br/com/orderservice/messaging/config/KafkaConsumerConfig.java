@@ -1,5 +1,6 @@
 package br.com.orderservice.messaging.config;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.common.TopicPartition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -9,6 +10,7 @@ import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.util.backoff.FixedBackOff;
 
 @Configuration
+@Slf4j
 public class KafkaConsumerConfig {
 
     @Bean
@@ -22,7 +24,7 @@ public class KafkaConsumerConfig {
         var errorHandler = new DefaultErrorHandler(recoverer, new FixedBackOff(1000L, 2));
 
         errorHandler.setRetryListeners((record, ex, deliveryAttempt) ->
-                System.out.println("Failed record: " + record.value() + ", attempt: " + deliveryAttempt)
+                log.warn("Failed record: {}, attempt: {}", record.value(), deliveryAttempt)
         );
 
         return errorHandler;

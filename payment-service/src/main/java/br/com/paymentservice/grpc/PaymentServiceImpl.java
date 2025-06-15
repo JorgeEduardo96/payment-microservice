@@ -7,14 +7,15 @@ import br.com.paymentservice.messaging.producer.PaymentProducer;
 import com.google.protobuf.Empty;
 import io.grpc.stub.StreamObserver;
 import net.devh.boot.grpc.server.service.GrpcService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.UUID;
-import java.util.logging.Logger;
 
 @GrpcService
 public class PaymentServiceImpl extends PaymentServiceGrpc.PaymentServiceImplBase {
 
-    private static final Logger logger = Logger.getLogger(PaymentServiceImpl.class.getName());
+    private static final Logger logger = LoggerFactory.getLogger(PaymentServiceImpl.class);
 
     private final PaymentProducer paymentProducer;
 
@@ -30,8 +31,12 @@ public class PaymentServiceImpl extends PaymentServiceGrpc.PaymentServiceImplBas
         var clientId = request.getClientId();
 
         logger.info(String.format("Processing payment for orderId: %s", orderId));
-        paymentProducer.sendPaymentEvent("payment-topic", new PaymentResponseDTO(UUID.fromString(orderId),
-                status, paymentMethod, UUID.fromString(clientId)));
+        try {
+            paymentProducer.sendPaymentEvent("payment-topic", new PaymentResponseDTO(UUID.fromString(orderId),
+                    status, paymentMethod, UUID.fromString(clientId)));
+        } catch (Exception e) {
+            logger.warn("Failed to send payment event: {}", e.getMessage());
+        }
 
         responseObserver.onNext(Empty.getDefaultInstance());
         responseObserver.onCompleted();

@@ -1,88 +1,91 @@
 plugins {
-	id 'java'
-	id 'org.springframework.boot' version '3.5.0'
-	id 'io.spring.dependency-management' version '1.1.7'
-	id 'com.google.protobuf' version '0.9.4'
+    id 'java'
+    id 'org.springframework.boot' version '3.5.0'
+    id 'io.spring.dependency-management' version '1.1.7'
+    id 'com.google.protobuf' version '0.9.4'
 }
 
 group = 'br.com.paymentservice'
 version = '0.0.1-SNAPSHOT'
 
 java {
-	toolchain {
-		languageVersion = JavaLanguageVersion.of(17)
-	}
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
 }
 
 repositories {
-	mavenCentral()
-	maven { url 'https://repo.spring.io/milestone' }
-	maven { url 'https://repo.spring.io/release' }
+    mavenCentral()
+    maven { url 'https://repo.spring.io/milestone' }
+    maven { url 'https://repo.spring.io/release' }
 }
 
 ext {
-	set('springCloudVersion', "2025.0.0-RC1")
-	set('springGrpcVersion', "0.8.0")
+    set('springCloudVersion', "2025.0.0-RC1")
+    set('springGrpcVersion', "0.8.0")
 }
 
 dependencies {
-	// Core Spring + Cloud
-	implementation 'org.springframework.boot:spring-boot-starter-web'
-	implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
+    // Spring Boot Starters
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
 
-	// Kafka
-	implementation 'org.springframework.kafka:spring-kafka'
+    // Kafka
+    implementation 'org.springframework.kafka:spring-kafka'
 
-	// gRPC
-	implementation 'io.grpc:grpc-services:1.63.0'
-	implementation 'io.grpc:grpc-netty-shaded:1.63.0'
-	implementation 'io.grpc:grpc-protobuf:1.63.0'
-	implementation 'io.grpc:grpc-stub:1.63.0'
-	implementation 'net.devh:grpc-spring-boot-starter:2.15.0.RELEASE'
+    // Resilience4j
+    implementation 'io.github.resilience4j:resilience4j-spring-boot3:2.2.0'
 
-	// Testes
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-	testImplementation 'org.springframework.grpc:spring-grpc-test'
-	testImplementation 'org.springframework.kafka:spring-kafka-test'
-	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    // gRPC
+    implementation 'io.grpc:grpc-services:1.63.0'
+    implementation 'io.grpc:grpc-netty-shaded:1.63.0'
+    implementation 'io.grpc:grpc-protobuf:1.63.0'
+    implementation 'io.grpc:grpc-stub:1.63.0'
+    implementation 'net.devh:grpc-spring-boot-starter:2.15.0.RELEASE'
+
+    // Testing
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.grpc:spring-grpc-test'
+    testImplementation 'org.springframework.kafka:spring-kafka-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 dependencyManagement {
-	imports {
-		mavenBom "org.springframework.grpc:spring-grpc-dependencies:${springGrpcVersion}"
-		mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
-	}
+    imports {
+        mavenBom "org.springframework.grpc:spring-grpc-dependencies:${springGrpcVersion}"
+        mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+    }
 }
 
 protobuf {
-	protoc {
-		artifact = "com.google.protobuf:protoc:3.25.1"
-	}
-	plugins {
-		grpc {
-			artifact = 'io.grpc:protoc-gen-grpc-java:1.63.0'
-		}
-	}
-	generateProtoTasks {
-		all().each { task ->
-			task.plugins {
-				grpc {
-					option 'jakarta_omit'
-					option '@generated=omit'
-				}
-			}
-		}
-	}
+    protoc {
+        artifact = "com.google.protobuf:protoc:3.25.1"
+    }
+    plugins {
+        grpc {
+            artifact = 'io.grpc:protoc-gen-grpc-java:1.63.0'
+        }
+    }
+    generateProtoTasks {
+        all().each { task ->
+            task.plugins {
+                grpc {
+                    option 'jakarta_omit'
+                    option '@generated=omit'
+                }
+            }
+        }
+    }
 }
 
 sourceSets {
-	main {
-		java {
-			srcDirs 'build/generated/source/proto/main/java', 'build/generated/source/proto/main/grpc'
-		}
-	}
+    main {
+        java {
+            srcDirs 'build/generated/source/proto/main/java', 'build/generated/source/proto/main/grpc'
+        }
+    }
 }
 
 tasks.named('test') {
-	useJUnitPlatform()
+    useJUnitPlatform()
 }

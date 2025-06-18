@@ -1,7 +1,7 @@
 package br.com.paymentservice.messaging.producer;
 
+import br.com.paymentservice.domain.dto.PaymentResponseDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.resilience4j.retry.annotation.Retry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -20,18 +20,13 @@ public class PaymentProducer {
         this.objectMapper = objectMapper;
     }
 
-    @Retry(name = "defaultProducerRetry", fallbackMethod = "fallback")
-    public void sendPaymentEvent(String topic, Object paymentEvent) throws Exception {
+    public void sendPaymentEvent(String topic, PaymentResponseDTO paymentEvent) throws Exception {
         try {
             kafkaTemplate.send(topic, objectMapper.writeValueAsString(paymentEvent));
+            logger.info("Payment {} sent successfully to topic: {}", paymentEvent, topic);
         } catch (Exception e) {
             logger.error("Failed to process message: {}", e.getMessage());
             throw e;
         }
-    }
-
-    @SuppressWarnings("unused")
-    public void fallback(String topic, Object payment, Throwable throwable) {
-        logger.warn("Fallback enabled - Kafka is unavailable. Payment: {}", payment);
     }
 }

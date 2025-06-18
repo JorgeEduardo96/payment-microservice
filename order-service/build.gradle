@@ -133,7 +133,7 @@ tasks.named('test') {
 }
 
 tasks.register('integrationTest', Test) {
-    description = 'Executa os testes de integração.'
+    description = 'Execute integration tests.'
     group = 'verification'
     testClassesDirs = sourceSets.integration.output.classesDirs
     classpath = sourceSets.integration.runtimeClasspath

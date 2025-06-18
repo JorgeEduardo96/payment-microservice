@@ -1,5 +1,6 @@
 package br.com.paymentservice.messaging.producer;
 
+import br.com.paymentservice.domain.dto.PaymentResponseDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
@@ -28,21 +29,21 @@ public class PaymentProducerTest {
 
     @Test
     void sendPaymentEvent() throws Exception {
-        var paymentEvent = "{\"id\":\"1\"}";
+        var mockedResponseDto = mock(PaymentResponseDTO.class);
         String topic = "test-topic";
-        String payload = "{\"id\":\"1\"}";
+        var payload = "mocked payload";
 
         ProducerRecord<String, Object> record = new ProducerRecord<>(topic, payload);
         RecordMetadata metadata = mock(RecordMetadata.class);
         SendResult<String, Object> sendResult = new SendResult<>(record, metadata);
 
-        when(objectMapper.writeValueAsString(paymentEvent)).thenReturn(payload);
+        when(objectMapper.writeValueAsString(mockedResponseDto)).thenReturn(payload);
         when(kafkaTemplate.send(topic, payload)).thenReturn(CompletableFuture.completedFuture(sendResult));
 
-        underTest.sendPaymentEvent(topic, payload);
+        underTest.sendPaymentEvent(topic, mockedResponseDto);
 
         verify(kafkaTemplate).send(topic, payload);
-        verify(objectMapper).writeValueAsString(paymentEvent);
+        verify(objectMapper).writeValueAsString(mockedResponseDto);
     }
 
 

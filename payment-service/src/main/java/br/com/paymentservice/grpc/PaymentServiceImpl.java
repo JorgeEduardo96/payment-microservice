@@ -30,7 +30,7 @@ public class PaymentServiceImpl extends PaymentServiceGrpc.PaymentServiceImplBas
         var paymentMethod = request.getPaymentMethod();
         var clientId = request.getClientId();
 
-        logger.info(String.format("Processing payment for orderId: %s", orderId));
+        logger.info("Processing payment for orderId: {}", orderId);
         try {
             paymentProducer.sendPaymentEvent("payment-topic", new PaymentResponseDTO(UUID.fromString(orderId),
                     status, paymentMethod, UUID.fromString(clientId)));

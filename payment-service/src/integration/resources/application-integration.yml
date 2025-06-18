@@ -12,22 +12,13 @@ grpc:
 server:
   port: 8083
 
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info
-  endpoint:
-    health:
-      show-details: always
-  health:
-    diskSpace:
-      enabled: false
-
 eureka:
   instance:
     metadata-map:
       grpc-port: 9090
   client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka/
+    enabled: false
+
+logging:
+  level:
+    io.github.resilience4j.retry: DEBUG

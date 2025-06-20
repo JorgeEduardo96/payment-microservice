@@ -29,6 +29,22 @@ spring:
 server:
   port: 8084
 
+logging:
+  pattern:
+    level: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%X{traceId:-},%X{spanId:-}] %5p %c - %m%n"
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: http://localhost:9411/api/v2/spans
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
 eureka:
   client:
     service-url:
@@ -47,7 +63,7 @@ resilience4j:
 
 notification-service:
   notification:
-    notification-type: email
+    notification-type: fake
   sendgrid:
     api-key: ${SENDGRID_API_KEY:CREATE_ENV_VARIABLES}
     from-email: ${SENDGRID_FROM_EMAIL:CREATE_ENV_VARIABLES}

@@ -89,6 +89,10 @@ dependencies {
     implementation "io.grpc:grpc-stub:${grpcVersion}"
     implementation 'net.devh:grpc-spring-boot-starter:2.15.0.RELEASE'
 
+    // Micrometer Tracing + Zipkin
+    implementation 'io.micrometer:micrometer-tracing-bridge-brave'
+    implementation 'io.zipkin.reporter2:zipkin-reporter-brave'
+
     // H2
     runtimeOnly 'com.h2database:h2'
 

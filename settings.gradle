@@ -1,3 +1,8 @@
 rootProject.name = 'payment-microservice'
 
-include 'client-service', 'order-service', 'payment-service', 'notification-service'
+include 'api-gateway'
+include 'client-service'
+include 'notification-service'
+include 'order-service'
+include 'payment-service'
+include 'service-registry'

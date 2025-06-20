@@ -5,6 +5,7 @@ import br.com.orderservice.domain.repository.ClientRepository;
 import br.com.orderservice.domain.repository.jpa.crudrepository.ClientJpaEntityCrudRepository;
 import br.com.orderservice.mapper.ClientMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;
@@ -12,6 +13,7 @@ import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class ClientRepositoryImpl implements ClientRepository {
 
     private final ClientMapper mapper;
@@ -23,9 +25,16 @@ public class ClientRepositoryImpl implements ClientRepository {
     }
 
     @Override
-    public void upsert(ClientEventDTO dto) {
-        var entity = mapper.toEntity(dto);
-        repository.save(entity);
+    public void upsert(ClientEventDTO clientEventDTO) {
+        log.info("Upserting client: {}", clientEventDTO);
+        var clientEntity = repository.findById(clientEventDTO.id())
+                .map(existingClient -> {
+                    existingClient.setName(clientEventDTO.name());
+                    return existingClient;
+                })
+                .orElseGet(() -> mapper.toEntity(clientEventDTO));
+
+        repository.save(clientEntity);
     }
 
 }

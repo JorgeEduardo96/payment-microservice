@@ -34,5 +34,4 @@ public class NotificationService {
             sendNotification.send(message);
         }
     }
-
 }

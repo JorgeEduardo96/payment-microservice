@@ -66,9 +66,10 @@ dependencies {
     // H2 Database
     runtimeOnly 'com.h2database:h2'
 
-    // Micrometer Tracing + Zipkin
+    // Micrometer Tracing + Zipkin + Prometheus
     implementation 'io.micrometer:micrometer-tracing-bridge-brave'
     implementation 'io.zipkin.reporter2:zipkin-reporter-brave'
+    implementation 'io.micrometer:micrometer-registry-prometheus'
 
     // Testing
     testImplementation 'org.springframework.boot:spring-boot-starter-test'

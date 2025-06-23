@@ -59,9 +59,10 @@ dependencies {
     // Liquibase
     implementation 'org.liquibase:liquibase-core'
 
-    // Micrometer Tracing + Zipkin
+    // Micrometer Tracing + Zipkin + Prometheus
     implementation 'io.micrometer:micrometer-tracing-bridge-brave'
     implementation 'io.zipkin.reporter2:zipkin-reporter-brave'
+    implementation 'io.micrometer:micrometer-registry-prometheus'
 
     //Lombok
     compileOnly 'org.projectlombok:lombok'

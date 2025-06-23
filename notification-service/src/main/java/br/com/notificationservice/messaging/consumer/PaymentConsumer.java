@@ -4,7 +4,6 @@ import br.com.notificationservice.domain.dto.PaymentResponseEventDTO;
 import br.com.notificationservice.domain.service.NotificationService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -19,7 +18,6 @@ public class PaymentConsumer {
     private final NotificationService notificationService;
 
     @KafkaListener(topics = "payment-topic", groupId = "notification-service-group")
-    @Retry(name = "defaultConsumerRetry", fallbackMethod = "fallback")
     public void consume(String message) throws JsonProcessingException {
         try {
             PaymentResponseEventDTO paymentResponseEventDTO = objectMapper.readValue(message, PaymentResponseEventDTO.class);
@@ -29,10 +27,5 @@ public class PaymentConsumer {
             log.error("Failed to process message: {}", e.getMessage());
             throw e;
         }
-    }
-
-    @SuppressWarnings("unused")
-    public void fallback(String message, Exception ex) {
-        log.error("Fallback enabled - An exception occurred when consuming message: {}", message, ex);
     }
 }

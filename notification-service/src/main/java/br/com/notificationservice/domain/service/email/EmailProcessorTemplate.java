@@ -23,5 +23,4 @@ public class EmailProcessorTemplate {
             throw new EmailException(ex.getMessage());
         }
     }
-
 }

@@ -1,4 +1,4 @@
-package br.com.orderservice.messaging.config;
+package br.com.notificationservice.messaging.config;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.common.TopicPartition;

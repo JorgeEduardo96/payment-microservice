@@ -31,7 +31,7 @@ public class ClientProducerFallbackIntegrationTest {
 
     @Test
     void shouldTriggerFallbackWhenKafkaFails() throws Exception {
-        var dto = new ClientOutputDTO(UUID.randomUUID(), "Maria", "maria@email.com", "98765432100", LocalDateTime.now(), null);
+        var dto = new ClientOutputDTO(UUID.randomUUID(), "John", "john.doe@email.com", "98765432100", LocalDateTime.now(), null);
         String topic = "client-created-topic";
 
         when(kafkaTemplate.send(any(String.class), any(Object.class)))

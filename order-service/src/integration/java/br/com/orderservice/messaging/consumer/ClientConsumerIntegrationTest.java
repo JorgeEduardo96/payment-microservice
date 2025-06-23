@@ -48,7 +48,7 @@ public class ClientConsumerIntegrationTest {
     @Test
     void shouldConsumeClientCreatedEventAndPersistInDatabase() throws Exception {
         var clientId = UUID.randomUUID();
-        var event = new ClientEventDTO(clientId, "Maria Teste", LocalDateTime.now(), null);
+        var event = new ClientEventDTO(clientId, "John Doe", LocalDateTime.now(), null);
         var message = objectMapper.writeValueAsString(event);
 
         producer.send(new ProducerRecord<>("client-created-topic", message));
@@ -58,7 +58,7 @@ public class ClientConsumerIntegrationTest {
 
         var persistedClient = repository.findById(clientId).orElse(null);
         assertThat(persistedClient).isNotNull();
-        assertThat(persistedClient.name()).isEqualTo("Maria Teste");
+        assertThat(persistedClient.name()).isEqualTo("John Doe");
     }
 
     @Test

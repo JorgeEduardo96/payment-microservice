@@ -57,7 +57,7 @@ public class PaymentConsumerIntegrationTest {
 
         clientId = UUID.randomUUID();
 
-        clientRepository.upsert(new ClientEventDTO(clientId, "Maria Teste", LocalDateTime.now(), null));
+        clientRepository.upsert(new ClientEventDTO(clientId, "John Doe", LocalDateTime.now(), null));
         var order = orderRepository.createOrder(new OrderInputDTO(clientId, new BigDecimal("100.00"), "123 Main St", PaymentMethod.CARD, null));
         orderId = order.id();
     }

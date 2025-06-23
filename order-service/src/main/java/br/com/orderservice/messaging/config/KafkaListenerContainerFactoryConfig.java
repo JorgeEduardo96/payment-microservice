@@ -23,5 +23,4 @@ public class KafkaListenerContainerFactoryConfig {
 
         return factory;
     }
-
 }

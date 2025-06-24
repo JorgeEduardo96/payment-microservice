@@ -52,17 +52,6 @@ eureka:
     service-url:
       defaultZone: http://localhost:8761/eureka/
 
-resilience4j:
-  retry:
-    instances:
-      defaultConsumerRetry:
-        max-attempts: 3
-        wait-duration: 1000ms
-        retry-exceptions:
-          - java.io.IOException
-          - com.fasterxml.jackson.core.JsonProcessingException
-          - org.springframework.dao.DataAccessException
-
 notification-service:
   notification:
     notification-type: fake

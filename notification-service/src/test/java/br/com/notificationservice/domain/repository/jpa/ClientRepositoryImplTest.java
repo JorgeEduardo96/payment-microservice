@@ -31,7 +31,7 @@ class ClientRepositoryImplTest {
     private ClientRepositoryImpl underTest;
 
     @Test
-    void upsertClient_existentClient() {
+    void upsert_existent() {
         UUID id = UUID.randomUUID();
         ClientEventDTO mockedDto = mock(ClientEventDTO.class);
         ClientJpaEntity mockedExistingEntity = mock(ClientJpaEntity.class);
@@ -41,7 +41,7 @@ class ClientRepositoryImplTest {
         when(mockedDto.email()).thenReturn("john.doe@email.com");
         when(repository.findById(mockedDto.id())).thenReturn(Optional.of(mockedExistingEntity));
 
-        underTest.upsertClient(mockedDto);
+        underTest.upsert(mockedDto);
 
         verify(mockedExistingEntity).setName("John Doe");
         verify(mockedExistingEntity).setEmail("john.doe@email.com");
@@ -49,7 +49,7 @@ class ClientRepositoryImplTest {
     }
 
     @Test
-    void upsertClient_nonExistentClient() {
+    void upsert_nonExistent() {
         UUID id = UUID.randomUUID();
         ClientEventDTO mockedDto = mock(ClientEventDTO.class);
         ClientJpaEntity newEntity = mock(ClientJpaEntity.class);
@@ -58,7 +58,7 @@ class ClientRepositoryImplTest {
         when(repository.findById(mockedDto.id())).thenReturn(Optional.empty());
         when(mapper.toEntity(mockedDto)).thenReturn(newEntity);
 
-        underTest.upsertClient(mockedDto);
+        underTest.upsert(mockedDto);
 
         verify(repository).save(newEntity);
     }

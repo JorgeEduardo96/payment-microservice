@@ -22,7 +22,7 @@ public class ClientConsumer {
         try {
             ClientEventDTO clientEvent = objectMapper.readValue(message, ClientEventDTO.class);
             log.info("Received client event: {}", clientEvent.id().toString());
-            clientRepository.upsertClient(clientEvent);
+            clientRepository.upsert(clientEvent);
         } catch (Exception e) {
             System.err.println("Failed to process message: " + e.getMessage());
             throw e;

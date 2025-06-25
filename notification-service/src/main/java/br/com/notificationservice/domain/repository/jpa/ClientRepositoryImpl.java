@@ -20,7 +20,7 @@ public class ClientRepositoryImpl implements ClientRepository {
     private final ClientJpaEntityCrudRepository repository;
 
     @Override
-    public void upsertClient(ClientEventDTO clientEventDTO) {
+    public void upsert(ClientEventDTO clientEventDTO) {
         log.info("Upserting client: {}", clientEventDTO);
         var clientEntity = repository.findById(clientEventDTO.id())
                 .map(existingClient -> {

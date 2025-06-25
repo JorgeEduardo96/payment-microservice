@@ -6,7 +6,7 @@ import java.util.UUID;
 
 public interface ClientRepository {
 
-    void upsertClient(ClientEventDTO clientEventDTO);
+    void upsert(ClientEventDTO clientEventDTO);
 
     ClientEventDTO findById(UUID id);
 

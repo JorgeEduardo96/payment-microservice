@@ -6,6 +6,8 @@ services:
       ZOOKEEPER_TICK_TIME: 2000
     ports:
       - "2181:2181"
+    networks:
+      - payment-microservice-network
 
   kafka:
     image: confluentinc/cp-kafka:7.6.0
@@ -18,10 +20,12 @@ services:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_INTERNAL://0.0.0.0:29092
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka:29092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_INTERNAL://kafka:29092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_INTERNAL
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - payment-microservice-network
 
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
@@ -31,11 +35,15 @@ services:
       KAFKA_CLUSTERS_0_NAME: local
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
       KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+    networks:
+      - payment-microservice-network
 
   zipkin:
     image: openzipkin/zipkin:latest
     ports:
       - "9411:9411"
+    networks:
+      - payment-microservice-network
 
   prometheus:
     image: prom/prometheus:latest
@@ -43,6 +51,8 @@ services:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
     ports:
       - "9091:9090"
+    networks:
+      - payment-microservice-network
 
   grafana:
     image: grafana/grafana:latest
@@ -55,6 +65,97 @@ services:
       - grafana-storage:/var/lib/grafana
     depends_on:
       - prometheus
+    networks:
+      - payment-microservice-network
+
+  service-registry:
+    image: payment-microservice/service-registry:latest
+    ports:
+      - "8761:8761"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - zookeeper
+      - kafka
+      - zipkin
+      - prometheus
+      - grafana
+    networks:
+      - payment-microservice-network
+
+  api-gateway:
+    image: payment-microservice/api-gateway:latest
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - service-registry
+    networks:
+      - payment-microservice-network
+    volumes:
+      - ./scripts/wait-for-it.sh:/wait-for-it.sh
+    command: [ "./wait-for-it.sh", "service-registry:8761", "--", "java", "-jar", "api-gateway.jar" ]
+
+  client-service:
+    image: payment-microservice/client-service:latest
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - service-registry
+    networks:
+      - payment-microservice-network
+    volumes:
+      - ./scripts/wait-for-it.sh:/wait-for-it.sh
+    command: [ "./wait-for-it.sh", "service-registry:8761", "--", "java", "-jar", "client-service.jar" ]
+
+  order-service:
+    image: payment-microservice/order-service:latest
+    ports:
+      - "8082:8082"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - service-registry
+    networks:
+      - payment-microservice-network
+    volumes:
+      - ./scripts/wait-for-it.sh:/wait-for-it.sh
+    command: [ "./wait-for-it.sh", "service-registry:8761", "--", "java", "-jar", "order-service.jar" ]
+
+  payment-service:
+    image: payment-microservice/payment-service:latest
+    ports:
+      - "8083:8083"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - service-registry
+    networks:
+      - payment-microservice-network
+    volumes:
+      - ./scripts/wait-for-it.sh:/wait-for-it.sh
+    command: [ "./wait-for-it.sh", "service-registry:8761", "--", "java", "-jar", "payment-service.jar" ]
+
+  notification-service:
+    image: payment-microservice/notification-service:latest
+    ports:
+      - "8084:8084"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - service-registry
+    networks:
+      - payment-microservice-network
+    volumes:
+      - ./scripts/wait-for-it.sh:/wait-for-it.sh
+    command: [ "./wait-for-it.sh", "service-registry:8761", "--", "java", "-jar", "notification-service.jar" ]
 
 volumes:
   grafana-storage:
+
+networks:
+  payment-microservice-network:
+    driver: bridge

@@ -1,0 +1,41 @@
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      default-filters:
+        - AddRequestHeader=X-From-Gateway, true
+      routes:
+        - id: client-service
+          uri: lb://client-service
+          predicates:
+            - Path=/client/**
+        - id: order-service
+          uri: lb://order-service
+          predicates:
+            - Path=/order/**
+
+server:
+  port: 8080
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: http://zipkin:9411/api/v2/spans
+  endpoints:
+    web:
+      exposure:
+        include:
+          - health
+          - info
+  endpoint:
+    health:
+      show-details: always
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://service-registry:8761/eureka/

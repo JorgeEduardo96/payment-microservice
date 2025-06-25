@@ -1,0 +1,48 @@
+spring:
+  application:
+    name: payment-service
+  kafka:
+    bootstrap-servers: kafka:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+grpc:
+  server:
+    port: 9090
+server:
+  port: 8083
+
+logging:
+  pattern:
+    level: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%X{traceId:-},%X{spanId:-}] %5p %c - %m%n"
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+    propagation:
+      type: b3
+  zipkin:
+    tracing:
+      endpoint: http://zipkin:9411/api/v2/spans
+  endpoints:
+    web:
+      exposure:
+        include:
+          - health
+          - info
+          - prometheus
+  endpoint:
+    health:
+      show-details: always
+  health:
+    diskSpace:
+      enabled: false
+
+eureka:
+  instance:
+    metadata-map:
+      grpc-port: 9090
+  client:
+    service-url:
+      defaultZone: http://service-registry:8761/eureka/

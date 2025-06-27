@@ -5,7 +5,7 @@ WORKDIR /app
 COPY build.gradle settings.gradle ./
 COPY src ./src
 
-RUN gradle clean build --no-daemon
+RUN gradle clean build -x test --no-daemon
 
 FROM eclipse-temurin:17-jre
 

@@ -69,7 +69,7 @@ services:
       - payment-microservice-network
 
   service-registry:
-    image: payment-microservice/service-registry:latest
+    image: jorgeeduardo96/payment-microservice-service-registry:latest
     ports:
       - "8761:8761"
     environment:
@@ -84,7 +84,7 @@ services:
       - payment-microservice-network
 
   api-gateway:
-    image: payment-microservice/api-gateway:latest
+    image: jorgeeduardo96/payment-microservice-api-gateway:latest
     ports:
       - "8080:8080"
     environment:
@@ -98,7 +98,7 @@ services:
     command: [ "./wait-for-it.sh", "service-registry:8761", "--", "java", "-jar", "api-gateway.jar" ]
 
   client-service:
-    image: payment-microservice/client-service:latest
+    image: jorgeeduardo96/payment-microservice-client-service:latest
     ports:
       - "8081:8081"
     environment:
@@ -112,7 +112,7 @@ services:
     command: [ "./wait-for-it.sh", "service-registry:8761", "--", "java", "-jar", "client-service.jar" ]
 
   order-service:
-    image: payment-microservice/order-service:latest
+    image: jorgeeduardo96/payment-microservice-order-service:latest
     ports:
       - "8082:8082"
     environment:
@@ -126,7 +126,7 @@ services:
     command: [ "./wait-for-it.sh", "service-registry:8761", "--", "java", "-jar", "order-service.jar" ]
 
   payment-service:
-    image: payment-microservice/payment-service:latest
+    image: jorgeeduardo96/payment-microservice-payment-service:latest
     ports:
       - "8083:8083"
     environment:
@@ -140,7 +140,7 @@ services:
     command: [ "./wait-for-it.sh", "service-registry:8761", "--", "java", "-jar", "payment-service.jar" ]
 
   notification-service:
-    image: payment-microservice/notification-service:latest
+    image: jorgeeduardo96/payment-microservice-notification-service:latest
     ports:
       - "8084:8084"
     environment:

@@ -24,3 +24,17 @@ jobs:
 
       - name: Build all services
         run: ./gradlew clean build --no-daemon
+
+      - name: Log in to Docker Hub
+          run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+      - name: Build and push Docker images
+          run: |
+            services=("api-gateway" "client-service" "notification-service" "order-service" "payment-service" "service-registry")
+            
+            for service in "${services[@]}"; do            
+              image="jorgeeduardo96/payment-microservice-${service}:latest"
+              docker build -t $image ./$service
+              docker push $image
+            done
+

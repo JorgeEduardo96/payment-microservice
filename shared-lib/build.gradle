@@ -1,0 +1,53 @@
+plugins {
+    id 'java'
+    id 'maven-publish'
+}
+
+group 'br.com.sharedlib'
+version '1.0.0'
+
+repositories {
+    mavenCentral()
+    maven { url 'https://repo.spring.io/milestone' }
+}
+
+ext {
+    set('mockitoVersion', "5.12.0")
+    set('lombokVersion', "1.18.38")
+    set('springKafkaVersion', "3.1.2")
+}
+
+dependencies {
+    implementation "org.springframework.kafka:spring-kafka:${springKafkaVersion}"
+    implementation "com.fasterxml.jackson.core:jackson-annotations:2.19.0"
+    implementation "org.springframework:spring-webmvc:6.2.7"
+
+    compileOnly "org.projectlombok:lombok:${lombokVersion}"
+    annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+
+    // Testing
+    testImplementation platform("org.junit:junit-bom:5.10.2")
+    testImplementation "org.junit.jupiter:junit-jupiter-api"
+    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine"
+
+    testImplementation "org.assertj:assertj-core:3.25.3"
+    testImplementation "org.mockito:mockito-core:${mockitoVersion}"
+    testImplementation "org.mockito:mockito-junit-jupiter:${mockitoVersion}"
+
+    testImplementation "jakarta.servlet:jakarta.servlet-api:6.0.0"
+
+    testCompileOnly "org.projectlombok:lombok:${lombokVersion}"
+    testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+}
+
+test {
+    useJUnitPlatform()
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+        }
+    }
+}

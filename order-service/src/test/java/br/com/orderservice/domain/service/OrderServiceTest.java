@@ -6,9 +6,9 @@ import br.com.orderservice.domain.dto.OrderOutputDTO;
 import br.com.orderservice.domain.enumeration.OrderStatus;
 import br.com.orderservice.domain.enumeration.PaymentMethod;
 import br.com.orderservice.domain.event.OrderCreatedEvent;
-import br.com.orderservice.domain.exception.EntityNotFoundException;
 import br.com.orderservice.domain.repository.ClientRepository;
 import br.com.orderservice.domain.repository.OrderRepository;
+import br.com.sharedlib.model.EntityNotFoundException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -76,6 +76,7 @@ public class OrderServiceTest {
     @Test
     void createOrder_throwsExceptionWhenClientNotFound() {
         var mockedInput = mock(OrderInputDTO.class);
+        when(mockedInput.clientId()).thenReturn(UUID.randomUUID());
         when(clientRepository.findById(mockedInput.clientId())).thenReturn(Optional.empty());
 
         EntityNotFoundException thrownException = assertThrows(EntityNotFoundException.class, () -> underTest.createOrder(mockedInput));

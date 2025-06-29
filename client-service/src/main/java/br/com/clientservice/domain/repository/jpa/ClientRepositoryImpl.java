@@ -3,10 +3,10 @@ package br.com.clientservice.domain.repository.jpa;
 import br.com.clientservice.domain.dto.ClientCreateInputDTO;
 import br.com.clientservice.domain.dto.ClientOutputDTO;
 import br.com.clientservice.domain.dto.ClientUpdateInputDTO;
-import br.com.clientservice.domain.exception.EntityNotFoundException;
 import br.com.clientservice.domain.mapper.ClientMapper;
 import br.com.clientservice.domain.repository.ClientRepository;
 import br.com.clientservice.domain.repository.jpa.crudrepository.ClientJpaEntityCrudRepository;
+import br.com.sharedlib.model.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeanWrapper;
@@ -36,8 +36,8 @@ public class ClientRepositoryImpl implements ClientRepository {
     @Override
     public ClientOutputDTO update(UUID id, ClientUpdateInputDTO inputDTO) {
         var existingEntity = repository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Client", id));
-         BeanUtils.copyProperties(inputDTO, existingEntity, getNullPropertyNames(inputDTO));
+                .orElseThrow(() -> new EntityNotFoundException("Client", id.toString()));
+        BeanUtils.copyProperties(inputDTO, existingEntity, getNullPropertyNames(inputDTO));
         existingEntity.setUpdatedAt(LocalDateTime.now());
         var updatedEntity = repository.save(existingEntity);
         return mapper.toDTO(updatedEntity);
@@ -57,7 +57,7 @@ public class ClientRepositoryImpl implements ClientRepository {
 
     @Override
     public ClientOutputDTO findById(UUID id) {
-        return mapper.toDTO(repository.findById(id).orElseThrow(() -> new EntityNotFoundException("Client", id)));
+        return mapper.toDTO(repository.findById(id).orElseThrow(() -> new EntityNotFoundException("Client", id.toString())));
     }
 
     @Override

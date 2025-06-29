@@ -3,7 +3,7 @@ package br.com.clientservice.domain.event.listener;
 import br.com.clientservice.domain.dto.ClientOutputDTO;
 import br.com.clientservice.domain.event.ClientCreatedEvent;
 import br.com.clientservice.domain.event.ClientUpdatedEvent;
-import br.com.clientservice.messaging.producer.ClientProducer;
+import br.com.clientservice.messaging.ClientProducer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

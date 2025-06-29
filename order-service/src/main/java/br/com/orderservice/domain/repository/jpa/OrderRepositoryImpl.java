@@ -4,10 +4,10 @@ import br.com.orderservice.domain.dto.OrderInputDTO;
 import br.com.orderservice.domain.dto.OrderOutputDTO;
 import br.com.orderservice.domain.entity.OrderJpaEntity;
 import br.com.orderservice.domain.enumeration.OrderStatus;
-import br.com.orderservice.domain.exception.EntityNotFoundException;
 import br.com.orderservice.domain.repository.OrderRepository;
 import br.com.orderservice.domain.repository.jpa.crudrepository.OrderJpaEntityCrudRepository;
 import br.com.orderservice.mapper.OrderMapper;
+import br.com.sharedlib.model.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -32,7 +32,7 @@ public class OrderRepositoryImpl implements OrderRepository {
     @Override
     public void processPayment(UUID orderId, OrderStatus status) {
         var entity = repository.findById(orderId)
-                .orElseThrow(() -> new EntityNotFoundException("Order", orderId));
+                .orElseThrow(() -> new EntityNotFoundException("Order", orderId.toString()));
         entity.setStatus(status);
         repository.save(entity);
     }

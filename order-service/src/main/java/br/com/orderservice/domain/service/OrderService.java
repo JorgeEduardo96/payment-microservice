@@ -3,9 +3,9 @@ package br.com.orderservice.domain.service;
 import br.com.orderservice.domain.dto.OrderInputDTO;
 import br.com.orderservice.domain.dto.OrderOutputDTO;
 import br.com.orderservice.domain.event.OrderCreatedEvent;
-import br.com.orderservice.domain.exception.EntityNotFoundException;
 import br.com.orderservice.domain.repository.ClientRepository;
 import br.com.orderservice.domain.repository.OrderRepository;
+import br.com.sharedlib.model.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -26,7 +26,7 @@ public class OrderService {
     public OrderOutputDTO createOrder(OrderInputDTO dto) {
         var optionalClient = clientRepository.findById(dto.clientId());
         if (optionalClient.isEmpty()) {
-            throw new EntityNotFoundException("Client", dto.clientId());
+            throw new EntityNotFoundException("Client", dto.clientId().toString());
         }
         var outputDTO = repository.createOrder(dto);
         var client = optionalClient.get();
@@ -40,7 +40,7 @@ public class OrderService {
     public List<OrderOutputDTO> getOrdersByClientId(UUID clientId) {
         var client = clientRepository.findById(clientId);
         if (client.isEmpty()) {
-            throw new EntityNotFoundException("Client", clientId);
+            throw new EntityNotFoundException("Client", clientId.toString());
         }
         return repository.ordersByClientId(clientId);
     }

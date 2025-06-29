@@ -2,7 +2,7 @@ package br.com.paymentservice.grpc;
 
 import br.com.orderservice.grpc.client.stub.PaymentRequest;
 import br.com.paymentservice.domain.dto.PaymentResponseDTO;
-import br.com.paymentservice.messaging.producer.PaymentProducer;
+import br.com.paymentservice.messaging.PaymentProducer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;

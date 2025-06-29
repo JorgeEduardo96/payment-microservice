@@ -3,7 +3,7 @@ package br.com.clientservice.domain.event.listener;
 import br.com.clientservice.domain.dto.ClientOutputDTO;
 import br.com.clientservice.domain.event.ClientCreatedEvent;
 import br.com.clientservice.domain.event.ClientUpdatedEvent;
-import br.com.clientservice.messaging.producer.ClientProducer;
+import br.com.clientservice.messaging.ClientProducer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;

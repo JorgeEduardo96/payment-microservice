@@ -1,7 +1,6 @@
 package br.com.clientservice.messaging;
 
 import br.com.clientservice.domain.dto.ClientOutputDTO;
-import br.com.clientservice.messaging.producer.ClientProducer;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.kafka.annotation.EnableKafka;

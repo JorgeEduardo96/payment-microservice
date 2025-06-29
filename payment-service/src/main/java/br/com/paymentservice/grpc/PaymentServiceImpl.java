@@ -3,7 +3,7 @@ package br.com.paymentservice.grpc;
 import br.com.orderservice.grpc.client.stub.PaymentRequest;
 import br.com.orderservice.grpc.client.stub.PaymentServiceGrpc;
 import br.com.paymentservice.domain.dto.PaymentResponseDTO;
-import br.com.paymentservice.messaging.producer.PaymentProducer;
+import br.com.paymentservice.messaging.PaymentProducer;
 import com.google.protobuf.Empty;
 import io.grpc.stub.StreamObserver;
 import net.devh.boot.grpc.server.service.GrpcService;

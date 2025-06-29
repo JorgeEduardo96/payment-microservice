@@ -1,7 +1,6 @@
 package br.com.clientservice.messaging;
 
 import br.com.clientservice.domain.dto.ClientOutputDTO;
-import br.com.clientservice.messaging.producer.ClientProducer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.junit.jupiter.api.Test;

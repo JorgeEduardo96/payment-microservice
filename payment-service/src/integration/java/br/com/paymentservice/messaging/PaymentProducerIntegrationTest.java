@@ -1,7 +1,6 @@
 package br.com.paymentservice.messaging;
 
 import br.com.paymentservice.domain.dto.PaymentResponseDTO;
-import br.com.paymentservice.messaging.producer.PaymentProducer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.junit.jupiter.api.Test;

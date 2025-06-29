@@ -3,7 +3,7 @@ package br.com.paymentservice.grpc;
 import br.com.orderservice.grpc.client.stub.PaymentRequest;
 import br.com.orderservice.grpc.client.stub.PaymentServiceGrpc;
 import br.com.paymentservice.domain.dto.PaymentResponseDTO;
-import br.com.paymentservice.messaging.producer.PaymentProducer;
+import br.com.paymentservice.messaging.PaymentProducer;
 import com.google.protobuf.Empty;
 import net.devh.boot.grpc.client.inject.GrpcClient;
 import org.junit.jupiter.api.Test;
@@ -50,7 +50,7 @@ public class PaymentServiceGrpcIntegrationTest {
         PaymentResponseDTO sentEvent = captor.getValue();
         assertThat(sentEvent.status()).isEqualTo("PAID");
         assertThat(sentEvent.paymentMethod()).isEqualTo("CARD");
-        assertThat(sentEvent.orderId().toString()).startsWith(orderId.toString().substring(0, 8));
+        assertThat(sentEvent.orderId().toString()).startsWith(orderId.substring(0, 8));
     }
 
     @Test

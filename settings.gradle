@@ -6,3 +6,5 @@ include 'notification-service'
 include 'order-service'
 include 'payment-service'
 include 'service-registry'
+include 'shared-lib'
+

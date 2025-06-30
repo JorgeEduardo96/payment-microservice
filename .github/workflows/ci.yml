@@ -37,8 +37,11 @@ jobs:
         run: |
           services=("api-gateway" "client-service" "notification-service" "order-service" "payment-service" "service-registry")
           
-          for service in "${services[@]}"; do            
+          for service in "${services[@]}"; do
             image="jorgeeduardo96/payment-microservice-${service}:latest"
-            docker build -t $image ./$service
+            docker build \
+              --build-arg GITHUB_USERNAME=$GITHUB_USERNAME \
+              --build-arg GITHUB_TOKEN=$GITHUB_TOKEN \
+              -t $image ./$service
             docker push $image
           done

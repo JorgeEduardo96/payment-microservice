@@ -15,10 +15,17 @@ java {
 }
 
 repositories {
-    mavenLocal()
     mavenCentral()
     maven { url 'https://repo.spring.io/milestone' }
     maven { url 'https://repo.spring.io/release' }
+    maven {
+        name = "GitHubPackages"
+        url = uri("https://maven.pkg.github.com/jorgeeduardo96/payment-microservice")
+        credentials {
+            username = System.getenv("GITHUB_USERNAME") ?: "JorgeEduardo96"
+            password = System.getenv("GITHUB_TOKEN") ?: "GET_TOKEN_FROM_GITHUB"
+        }
+    }
 }
 
 ext {
@@ -35,7 +42,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
     // Shared lib
-    implementation 'br.com.sharedlib:shared-lib:1.0.0'
+    implementation 'br.com.sharedlib:shared-lib:1.0.1'
 
     // gRPC
     implementation "io.grpc:grpc-services:${grpcVersion}"

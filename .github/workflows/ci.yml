@@ -27,9 +27,6 @@ jobs:
       - name: Grant execute permission to gradlew
         run: chmod +x gradlew
 
-      - name: Show all changed files detected by paths-filter
-        run: echo "${{ toJson(steps.changes.outputs) }}"
-
       - name: Detect changes in shared-lib
         uses: dorny/paths-filter@v2
         id: changes
@@ -37,6 +34,9 @@ jobs:
           filters: |
             shared-lib:
               - 'shared-lib/**'
+
+      - name: Show all changed files detected by paths-filter
+        run: echo "${{ toJson(steps.changes.outputs) }}"
 
       - name: Publish shared-lib to GitHub Packages
         if: steps.changes.outputs.shared-lib == 'true'

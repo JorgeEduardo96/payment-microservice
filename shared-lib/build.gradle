@@ -6,6 +6,11 @@ plugins {
 group 'br.com.sharedlib'
 version '1.0.0'
 
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
 repositories {
     mavenCentral()
     maven { url 'https://repo.spring.io/milestone' }
@@ -48,6 +53,22 @@ publishing {
     publications {
         mavenJava(MavenPublication) {
             from components.java
+            groupId = 'br.com.sharedlib'
+            artifactId = 'shared-lib'
+            version = '1.0.0'
+        }
+    }
+
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/jorgeeduardo96/payment-microservice")
+
+            credentials {
+                username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_USERNAME")
+                password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
+            }
         }
     }
 }
+

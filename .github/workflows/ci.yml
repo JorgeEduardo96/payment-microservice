@@ -2,13 +2,17 @@ name: CI - Build and Test all services
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, shared-lib-implementation ]
   pull_request:
     branches: [ main ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    env:
+      GITHUB_USERNAME: ${{ secrets.GH_USERNAME }}
+      GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
 
     steps:
       - name: Checkout code
@@ -22,6 +26,19 @@ jobs:
 
       - name: Grant execute permission to gradlew
         run: chmod +x gradlew
+
+      - name: Detect changes in shared-lib
+        uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          filters: |
+            shared-lib:
+              - 'shared-lib/**'
+
+      - name: Publish shared-lib to GitHub Packages
+        if: steps.changes.outputs.shared-lib == 'true'
+        working-directory: shared-lib
+        run: ./gradlew publish --no-daemon
 
       - name: Build all services
         run: ./gradlew clean build --no-daemon

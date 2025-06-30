@@ -17,6 +17,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: Set up Java 17
         uses: actions/setup-java@v3
@@ -27,19 +29,18 @@ jobs:
       - name: Grant execute permission to gradlew
         run: chmod +x gradlew
 
-      - name: Detect changes in shared-lib
-        uses: dorny/paths-filter@v2
-        id: changes
-        with:
-          filters: |
-            shared-lib:
-              - 'shared-lib/**'
-
-      - name: Show all changed files detected by paths-filter
-        run: echo "${{ toJson(steps.changes.outputs) }}"
+      - name: Check if shared-lib changed
+        id: shared-lib-check
+        run: |
+          echo "Verifying changes in shared-lib..."
+          if git diff --name-only origin/main...HEAD | grep '^shared-lib/'; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Publish shared-lib to GitHub Packages
-        if: steps.changes.outputs.shared-lib == 'true'
+        if: steps.shared-lib-check.outputs.changed == 'true'
         working-directory: shared-lib
         run: ./gradlew publish --no-daemon
 

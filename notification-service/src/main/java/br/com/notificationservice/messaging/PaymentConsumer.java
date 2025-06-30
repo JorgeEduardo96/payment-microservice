@@ -1,4 +1,4 @@
-package br.com.notificationservice.messaging.consumer;
+package br.com.notificationservice.messaging;
 
 import br.com.notificationservice.domain.dto.PaymentResponseEventDTO;
 import br.com.notificationservice.domain.service.NotificationService;

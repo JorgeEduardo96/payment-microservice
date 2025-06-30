@@ -1,4 +1,4 @@
-package br.com.notificationservice.messaging.consumer;
+package br.com.notificationservice.messaging;
 
 import br.com.notificationservice.domain.dto.ClientEventDTO;
 import br.com.notificationservice.domain.repository.ClientRepository;

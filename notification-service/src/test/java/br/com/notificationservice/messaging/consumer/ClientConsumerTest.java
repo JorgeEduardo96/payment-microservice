@@ -2,6 +2,7 @@ package br.com.notificationservice.messaging.consumer;
 
 import br.com.notificationservice.domain.dto.ClientEventDTO;
 import br.com.notificationservice.domain.repository.ClientRepository;
+import br.com.notificationservice.messaging.ClientConsumer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;

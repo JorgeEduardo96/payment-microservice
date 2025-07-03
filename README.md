@@ -34,7 +34,7 @@ didactic purpose.
 ## ✅ Best Practices Followed
 
 - 📦 Clear separation between domains, layers, and responsibilities.
-- 🔁 Retry, Circuit Breaker, and Fallback with **Resilience4j**.
+- 🔁 Retry and Fallback with **Resilience4j**.
 - 🧪 **Unit and integration tests** with significant coverage.
 - 📊 Observability using:
     - **Zipkin** (distributed tracing).
@@ -80,4 +80,4 @@ didactic purpose.
 - Eureka: http://localhost:8761
 - Kafka UI: http://localhost:8085
 - Zipkin: http://localhost:9411
-- Grafana: http://localhost:3000 (login padrão: admin / admin)
+- Grafana: http://localhost:3000 (default login: admin / admin)

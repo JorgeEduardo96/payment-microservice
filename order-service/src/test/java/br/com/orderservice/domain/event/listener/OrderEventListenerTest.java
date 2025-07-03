@@ -3,7 +3,7 @@ package br.com.orderservice.domain.event.listener;
 import br.com.orderservice.domain.dto.OrderOutputDTO;
 import br.com.orderservice.domain.enumeration.PaymentMethod;
 import br.com.orderservice.domain.event.OrderCreatedEvent;
-import br.com.orderservice.grpc.client.PaymentGrpcClient;
+import br.com.orderservice.domain.service.PaymentService;
 import br.com.orderservice.grpc.client.stub.PaymentRequest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -22,7 +22,7 @@ import static org.mockito.Mockito.*;
 public class OrderEventListenerTest {
 
     @Mock
-    private PaymentGrpcClient paymentGrpcClient;
+    private PaymentService paymentService;
 
     @InjectMocks
     private OrderEventListener underTest;
@@ -46,7 +46,7 @@ public class OrderEventListenerTest {
 
         underTest.handleOrderCreated(event);
 
-        verify(paymentGrpcClient).processPayment(paymentRequestCaptor.capture());
+        verify(paymentService).processPayment(paymentRequestCaptor.capture());
 
         PaymentRequest capturedRequest = paymentRequestCaptor.getValue();
 
@@ -56,6 +56,6 @@ public class OrderEventListenerTest {
         assertThat(capturedRequest.getPaymentMethod()).isEqualTo(paymentMethod.getDescription());
         assertThat(capturedRequest.getClientId()).isEqualTo(clientId.toString());
 
-        verifyNoMoreInteractions(paymentGrpcClient);
+        verifyNoMoreInteractions(paymentService);
     }
 }

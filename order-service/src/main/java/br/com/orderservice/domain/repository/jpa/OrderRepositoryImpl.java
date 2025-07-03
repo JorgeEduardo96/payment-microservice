@@ -23,6 +23,11 @@ public class OrderRepositoryImpl implements OrderRepository {
     private final OrderJpaEntityCrudRepository repository;
 
     @Override
+    public OrderOutputDTO findOrderById(UUID orderId) {
+        return repository.findById(orderId).map(mapper::toDto).orElse(null);
+    }
+
+    @Override
     public OrderOutputDTO createOrder(OrderInputDTO dto) {
         OrderJpaEntity entity = mapper.toEntity(dto);
         entity.applyDiscount();

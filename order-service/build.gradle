@@ -73,6 +73,9 @@ dependencies {
     // Shared lib
     implementation 'br.com.sharedlib:shared-lib:1.0.1'
 
+    // Resilience4j
+    implementation 'io.github.resilience4j:resilience4j-spring-boot3:2.2.0'
+
     //Kafka
     implementation 'org.springframework.kafka:spring-kafka'
 

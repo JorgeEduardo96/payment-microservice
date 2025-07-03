@@ -9,6 +9,8 @@ import java.util.UUID;
 
 public interface OrderRepository {
 
+    OrderOutputDTO findOrderById(UUID orderId);
+
     OrderOutputDTO createOrder(OrderInputDTO dto);
 
     void processPayment(UUID orderId, OrderStatus status);

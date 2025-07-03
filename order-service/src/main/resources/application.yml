@@ -44,3 +44,17 @@ eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
+
+resilience4j:
+  retry:
+    instances:
+      payment:
+        max-attempts: 3
+        wait-duration: 2s
+        retry-exceptions:
+          - io.grpc.StatusRuntimeException
+        ignore-exceptions:
+          - java.lang.IllegalArgumentException
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2.0
+

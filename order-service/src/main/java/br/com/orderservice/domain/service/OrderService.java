@@ -2,6 +2,7 @@ package br.com.orderservice.domain.service;
 
 import br.com.orderservice.domain.dto.OrderInputDTO;
 import br.com.orderservice.domain.dto.OrderOutputDTO;
+import br.com.orderservice.domain.enumeration.OrderStatus;
 import br.com.orderservice.domain.event.OrderCreatedEvent;
 import br.com.orderservice.domain.repository.ClientRepository;
 import br.com.orderservice.domain.repository.OrderRepository;
@@ -9,9 +10,11 @@ import br.com.sharedlib.model.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 @Service
@@ -43,6 +46,19 @@ public class OrderService {
             throw new EntityNotFoundException("Client", clientId.toString());
         }
         return repository.ordersByClientId(clientId);
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void cancelOrder(UUID orderId) {
+        var order = repository.findOrderById(orderId);
+
+        if (Objects.isNull(order)) {
+            throw new EntityNotFoundException("Order", orderId.toString());
+        }
+
+        if (OrderStatus.PENDING_PAYMENT.equals(order.status())) {
+            repository.processPayment(orderId, OrderStatus.FAILED);
+        }
     }
 
 }

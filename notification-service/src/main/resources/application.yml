@@ -13,23 +13,6 @@ spring:
     console:
       enabled: true
       path: /h2-console
-  kafka:
-    bootstrap-servers: localhost:9092
-    consumer:
-      group-id: order-service-group
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
-      auto-offset-reset: earliest
-      enable-auto-commit: false
-      max-poll-records: 1
-    listener:
-      ack-mode: record
-      concurrency: 1
-      missing-topics-fatal: false
-    producer:
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.apache.kafka.common.serialization.StringSerializer
-      retries: 3
   liquibase:
     change-log: classpath:db/changelog/db.changelog-master.yaml
 
@@ -61,7 +44,7 @@ eureka:
 
 notification-service:
   notification:
-    notification-type: fake
+    notification-type: email
   sendgrid:
     api-key: ${SENDGRID_API_KEY:CREATE_ENV_VARIABLES}
     from-email: ${SENDGRID_FROM_EMAIL:CREATE_ENV_VARIABLES}

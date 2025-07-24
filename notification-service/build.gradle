@@ -59,7 +59,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
     // Shared lib
-    implementation 'br.com.sharedlib:shared-lib:1.0.1'
+    implementation 'br.com.sharedlib:shared-lib:1.0.2'
 
     // Sendgrid
     implementation 'com.sendgrid:sendgrid-java:4.10.2'

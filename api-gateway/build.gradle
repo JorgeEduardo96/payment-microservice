@@ -45,4 +45,5 @@ dependencyManagement {
 
 tasks.named('test') {
     useJUnitPlatform()
+    systemProperty "spring.cloud.discovery.enabled", "false"
 }

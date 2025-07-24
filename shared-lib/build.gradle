@@ -4,7 +4,7 @@ plugins {
 }
 
 group 'br.com.sharedlib'
-version '1.0.0'
+version '1.0.2'
 
 java {
     sourceCompatibility = JavaVersion.VERSION_17
@@ -26,6 +26,10 @@ dependencies {
     implementation "org.springframework.kafka:spring-kafka:${springKafkaVersion}"
     implementation "com.fasterxml.jackson.core:jackson-annotations:2.19.0"
     implementation "org.springframework:spring-webmvc:6.2.7"
+
+    implementation 'org.slf4j:slf4j-api:2.0.13'
+
+    runtimeOnly 'ch.qos.logback:logback-classic:1.4.14'
 
     compileOnly "org.projectlombok:lombok:${lombokVersion}"
     annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
@@ -55,7 +59,6 @@ publishing {
             from components.java
             groupId = 'br.com.sharedlib'
             artifactId = 'shared-lib'
-            version = '1.0.1'
         }
     }
 

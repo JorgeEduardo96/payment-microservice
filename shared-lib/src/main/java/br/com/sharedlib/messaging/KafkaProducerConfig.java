@@ -17,9 +17,15 @@ public class KafkaProducerConfig {
     }
 
     @Bean
+    public KafkaProducerInterceptor kafkaProducerInterceptor() {
+        return new KafkaProducerInterceptor();
+    }
+
+    @Bean
     public KafkaTemplate<String, Object> kafkaTemplate() {
         KafkaTemplate<String, Object> template = new KafkaTemplate<>(producerFactory);
         template.setObservationEnabled(true);
+        template.setProducerInterceptor(kafkaProducerInterceptor());
         return template;
     }
 

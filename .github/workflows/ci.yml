@@ -2,7 +2,7 @@ name: CI - Build and Test all services
 
 on:
   push:
-    branches: [ main, e2e-tests ]
+    branches: [ main ]
   pull_request:
     branches: [ main ]
 

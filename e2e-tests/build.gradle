@@ -28,7 +28,11 @@ tasks.named('test') {
     environment 'PATH', (System.getenv('PATH') ?: '') + ':/usr/local/bin'
 }
 
-// Exclui o módulo e2e-tests do check geral do projeto raiz
-tasks.named('check') {
-    // E2E não faz parte do ciclo de build padrão
+// O plugin 'java' adiciona 'test' como dependência de 'check' automaticamente.
+// Removemos essa dependência para que ./gradlew build não execute os testes E2E.
+// Os testes são executados explicitamente no CI como step separado.
+afterEvaluate {
+    tasks.named('check').configure {
+        setDependsOn([])
+    }
 }

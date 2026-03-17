@@ -28,7 +28,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build all services
-        run: ./gradlew clean build --no-daemon
+        run: ./gradlew clean build -x :e2e-tests:test --no-daemon
 
       - name: Log in to Docker Hub
         run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin

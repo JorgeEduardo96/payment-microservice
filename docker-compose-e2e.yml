@@ -1,0 +1,120 @@
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - e2e-network
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_INTERNAL://0.0.0.0:29092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_INTERNAL://kafka:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_INTERNAL
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - e2e-network
+
+  service-registry:
+    image: jorgeeduardo96/payment-microservice-service-registry:latest
+    ports:
+      - "8761:8761"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - zookeeper
+      - kafka
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - e2e-network
+
+  api-gateway:
+    image: jorgeeduardo96/payment-microservice-api-gateway:latest
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      service-registry:
+        condition: service_healthy
+    volumes:
+      - ./scripts/wait-for-it.sh:/wait-for-it.sh
+    command: ["./wait-for-it.sh", "service-registry:8761", "--", "java", "-jar", "api-gateway.jar"]
+    networks:
+      - e2e-network
+
+  client-service:
+    image: jorgeeduardo96/payment-microservice-client-service:latest
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      service-registry:
+        condition: service_healthy
+    volumes:
+      - ./scripts/wait-for-it.sh:/wait-for-it.sh
+    command: ["./wait-for-it.sh", "service-registry:8761", "--", "java", "-jar", "client-service.jar"]
+    networks:
+      - e2e-network
+
+  order-service:
+    image: jorgeeduardo96/payment-microservice-order-service:latest
+    ports:
+      - "8082:8082"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      service-registry:
+        condition: service_healthy
+    volumes:
+      - ./scripts/wait-for-it.sh:/wait-for-it.sh
+    command: ["./wait-for-it.sh", "service-registry:8761", "--", "java", "-jar", "order-service.jar"]
+    networks:
+      - e2e-network
+
+  payment-service:
+    image: jorgeeduardo96/payment-microservice-payment-service:latest
+    ports:
+      - "8083:8083"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      service-registry:
+        condition: service_healthy
+    volumes:
+      - ./scripts/wait-for-it.sh:/wait-for-it.sh
+    command: ["./wait-for-it.sh", "service-registry:8761", "--", "java", "-jar", "payment-service.jar"]
+    networks:
+      - e2e-network
+
+  notification-service:
+    image: jorgeeduardo96/payment-microservice-notification-service:latest
+    ports:
+      - "8084:8084"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SENDGRID_API_KEY=test-key-not-used-in-e2e
+    depends_on:
+      service-registry:
+        condition: service_healthy
+    volumes:
+      - ./scripts/wait-for-it.sh:/wait-for-it.sh
+    command: ["./wait-for-it.sh", "service-registry:8761", "--", "java", "-jar", "notification-service.jar"]
+    networks:
+      - e2e-network
+
+networks:
+  e2e-network:
+    driver: bridge

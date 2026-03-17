@@ -7,4 +7,5 @@ include 'order-service'
 include 'payment-service'
 include 'service-registry'
 include 'shared-lib'
+include 'e2e-tests'
 

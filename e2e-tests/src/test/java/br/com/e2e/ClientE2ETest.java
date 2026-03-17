@@ -59,7 +59,7 @@ class ClientE2ETest extends BaseE2ETest {
                 .then()
                 .statusCode(200)
                 .body("id", equalTo(clientId))
-                .body("name", equalTo("Maria Souzaa"))
+                .body("name", equalTo("Maria Souza"))
                 .body("email", equalTo(email));
     }
 

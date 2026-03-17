@@ -2,7 +2,7 @@ name: CI - Build and Test all services
 
 on:
   push:
-    branches: [ main, shared-lib-implementation ]
+    branches: [ main ]
   pull_request:
     branches: [ main ]
 
@@ -28,20 +28,30 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build all services
-        run: ./gradlew clean build --no-daemon
+        run: ./gradlew clean build -x :e2e-tests:test --no-daemon
 
       - name: Log in to Docker Hub
         run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
-      - name: Build and push Docker images
+      - name: Build Docker images
         run: |
           services=("api-gateway" "client-service" "notification-service" "order-service" "payment-service" "service-registry")
-          
+
           for service in "${services[@]}"; do
             image="jorgeeduardo96/payment-microservice-${service}:latest"
             docker build \
               --build-arg GITHUB_USERNAME=$GITHUB_USERNAME \
               --build-arg GITHUB_TOKEN=$GITHUB_TOKEN \
               -t $image ./$service
-            docker push $image
+          done
+
+      - name: Run E2E tests
+        run: ./gradlew :e2e-tests:test --no-daemon
+
+      - name: Push Docker images
+        run: |
+          services=("api-gateway" "client-service" "notification-service" "order-service" "payment-service" "service-registry")
+
+          for service in "${services[@]}"; do
+            docker push "jorgeeduardo96/payment-microservice-${service}:latest"
           done

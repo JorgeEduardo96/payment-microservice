@@ -1,0 +1,38 @@
+plugins {
+    id 'java'
+}
+
+group = 'br.com.e2e'
+version = '0.0.1-SNAPSHOT'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.3'
+    testImplementation 'io.rest-assured:rest-assured:5.4.0'
+    testImplementation 'org.awaitility:awaitility:4.2.0'
+
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+    // E2E tests requerem Docker e imagens disponíveis localmente.
+    // Execute com: ./gradlew :e2e-tests:test
+    // Para pular nos builds normais: ./gradlew build -x :e2e-tests:test
+
+    environment 'PATH', (System.getenv('PATH') ?: '') + ':/usr/local/bin'
+}
+
+// O plugin 'java' adiciona 'test' como dependência de 'check' automaticamente.
+// Removemos essa dependência para que ./gradlew build não execute os testes E2E.
+// Os testes são executados explicitamente no CI como step separado.
+afterEvaluate {
+    tasks.named('check').configure {
+        setDependsOn([])
+    }
+}

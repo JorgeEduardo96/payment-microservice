@@ -2,8 +2,8 @@
 
 ## Overview
 
-This project demonstrates a modern and resilient microservices architecture using **Spring Boot**, **Gradle**, and *
-*Apache Kafka** as the event backbone. It follows best practices for scalability, decoupling, and observability with a
+This project demonstrates a modern and resilient microservices architecture using **Spring Boot**, **Gradle**, and **Apache Kafka**
+as the event backbone. It follows best practices for scalability, decoupling, and observability with a
 didactic purpose.
 
 ---

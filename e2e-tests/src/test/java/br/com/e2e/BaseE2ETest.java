@@ -20,7 +20,7 @@ public abstract class BaseE2ETest {
     private static final File COMPOSE_FILE = resolveComposeFile();
     private static final Duration STARTUP_TIMEOUT = Duration.ofMinutes(5);
 
-    // flag para subir o stack apenas uma vez para todas as classes de teste
+    // flag to ensure that the stack is started only once, even if multiple test classes extend BaseE2ETest
     private static volatile boolean stackStarted = false;
 
     @BeforeAll
@@ -32,17 +32,17 @@ public abstract class BaseE2ETest {
 
         composeCommand("up", "--wait", "-d");
 
-        // espera actuator/health de cada serviço
-        waitForHealth("api-gateway",    "http://localhost:8080/actuator/health");
+        // wait for all services to be healthy
+        waitForHealth("api-gateway", "http://localhost:8080/actuator/health");
         waitForHealth("client-service", "http://localhost:8081/actuator/health");
-        waitForHealth("order-service",  "http://localhost:8082/actuator/health");
+        waitForHealth("order-service", "http://localhost:8082/actuator/health");
 
-        // espera o gateway estar roteando (Eureka pode demorar para registrar)
+        // wait for gateway to be routing (Eureka can take few minutes sometimes)
         waitForGatewayRouting();
 
         stackStarted = true;
 
-        // derruba o stack ao fim da JVM (fim de todos os testes)
+        // shutdown the whole stack (after all tests are done)
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             try {
                 System.out.println("[E2E] Shutdown hook: stopping Docker Compose stack...");
@@ -55,9 +55,7 @@ public abstract class BaseE2ETest {
         RestAssured.baseURI = GATEWAY_BASE_URL;
     }
 
-    // -------------------------------------------------------------------------
-    // Helpers de dados de teste
-    // -------------------------------------------------------------------------
+    // Helpers
 
     protected static String uniqueEmail() {
         return "test-" + UUID.randomUUID().toString().substring(0, 8) + "@e2e.com";
@@ -91,9 +89,7 @@ public abstract class BaseE2ETest {
                 d1, d2);
     }
 
-    // -------------------------------------------------------------------------
-    // Infraestrutura interna
-    // -------------------------------------------------------------------------
+    // Internal infrastructure methods
 
     private static void composeCommand(String... args) throws Exception {
         String[] full = new String[4 + args.length];
@@ -138,8 +134,8 @@ public abstract class BaseE2ETest {
     }
 
     /**
-     * Aguarda até o API Gateway conseguir rotear para o client-service via Eureka.
-     * Um GET /client/{uuid} deve retornar 404 (não 502/503) quando o roteamento estiver OK.
+     * Wait until API Gateway can route to client-service via Eureka.
+     * A GET /client/{uuid} with a random UUID should return 404 (not 502/503) when routing is ready.
      */
     private static void waitForGatewayRouting() throws Exception {
         String probeUrl = GATEWAY_BASE_URL + "/client/00000000-0000-0000-0000-000000000000";

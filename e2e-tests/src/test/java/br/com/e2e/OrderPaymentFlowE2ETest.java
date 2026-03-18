@@ -13,11 +13,11 @@ import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.notNullValue;
 
 /**
- * Testes E2E do fluxo completo: criação de cliente → criação de pedido → processamento de pagamento.
+ * E2E tests covering the complete order payment flow: client creation → order creation → asynchronous payment processing.
  * <p>
- * Lógica de pagamento do payment-service:
- * - Último caractere do orderId é letra (a-f) → status PAID
- * - Último caractere do orderId é dígito (0-9) → status FAILED
+ * Payment logic in payment-service:
+ * - Last char of orderId is a letter (a-f) → status PAID
+ * - Last char of orderId is a digit (0-9) → status FAILED
  */
 class OrderPaymentFlowE2ETest extends BaseE2ETest {
 
@@ -49,9 +49,9 @@ class OrderPaymentFlowE2ETest extends BaseE2ETest {
                 .statusCode(201)
                 .extract().path("id");
 
-        // O payment-service processa via gRPC e publica evento Kafka.
-        // O order-service consome o evento e atualiza o status.
-        // Aguardamos até 30 segundos para o status sair de PENDING_PAYMENT.
+        // The payment-service processes the payment asynchronously via gRPC and publishes a Kafka event.
+        // The order-service consumes the Kafka event and updates the order status accordingly.
+        // We wait up to 30 seconds for the order status to change from PENDING_PAYMENT, polling every 2 seconds.
         await()
                 .atMost(30, SECONDS)
                 .pollInterval(2, SECONDS)
@@ -76,8 +76,8 @@ class OrderPaymentFlowE2ETest extends BaseE2ETest {
                 .statusCode(201)
                 .extract().path("id");
 
-        // Descobre o status esperado com base na lógica do payment-service:
-        // último char do UUID → letra = PAID, dígito = FAILED
+        // Find the final payment status (PAID or FAILED) based on the last char of the orderId,
+        // which is determined by the payment-service logic.
         char lastChar = orderId.charAt(orderId.length() - 1);
         String expectedStatus = Character.isLetter(lastChar) ? "PAID" : "FAILED";
 
@@ -137,14 +137,12 @@ class OrderPaymentFlowE2ETest extends BaseE2ETest {
                 .statusCode(404);
     }
 
-    // -------------------------------------------------------------------------
     // Helpers
-    // -------------------------------------------------------------------------
 
     /**
-     * Cria um cliente e aguarda o evento Kafka ser consumido pelo order-service.
-     * O order-service tem seu próprio banco de dados e popula os clientes via Kafka.
-     * Sem essa espera, o POST /order retorna 404 porque o cliente ainda não foi propagado.
+     * Create a client and wait for the Kafka event to be consumed by the order-service.
+     * The order-service has its own database and populates clients via Kafka.
+     * Without this wait, POST /order returns 404 because the client has not been propagated
      */
     private String createClient() {
         String clientId = given()
@@ -161,9 +159,9 @@ class OrderPaymentFlowE2ETest extends BaseE2ETest {
                 .statusCode(201)
                 .extract().path("id");
 
-        // Aguarda o evento Kafka chegar ao order-service.
-        // GET /order/client/{id} retorna 200 quando o cliente está disponível,
-        // e 404 enquanto o evento ainda não foi consumido.
+        // Wait the client-service to publish the client-created event to
+        // Kafka and for the order-service to consume it and make the client available in its database.
+        // It will return 404 until the event is consumed, then it will return 200. We wait up to 30 seconds, polling every 2 seconds.
         await()
                 .atMost(30, SECONDS)
                 .pollInterval(2, SECONDS)

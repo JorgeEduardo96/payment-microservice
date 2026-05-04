@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -44,6 +45,10 @@ public class ClientService {
 
     public ClientOutputDTO findClient(UUID id) {
         return repository.findById(id);
+    }
+
+    public List<ClientOutputDTO> findAll() {
+        return repository.findAll();
     }
 
 

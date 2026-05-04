@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -68,5 +69,10 @@ public class ClientRepositoryImpl implements ClientRepository {
     @Override
     public ClientOutputDTO findByCpf(String cpf) {
         return repository.findByCpf(cpf).map(mapper::toDTO).orElse(null);
+    }
+
+    @Override
+    public List<ClientOutputDTO> findAll() {
+        return repository.findAll().stream().map(mapper::toDTO).toList();
     }
 }

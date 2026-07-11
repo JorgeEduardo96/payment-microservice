@@ -17,4 +17,6 @@ public interface OrderRepository {
 
     List<OrderOutputDTO> ordersByClientId(UUID clientId);
 
+    List<OrderOutputDTO> findAll();
+
 }

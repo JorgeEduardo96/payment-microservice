@@ -35,7 +35,7 @@ jobs:
 
       - name: Build Docker images
         run: |
-          services=("api-gateway" "client-service" "notification-service" "order-service" "payment-service" "service-registry")
+          services=("api-gateway" "client-service" "notification-service" "order-service" "payment-service" "service-registry" "frontend")
 
           for service in "${services[@]}"; do
             image="jorgeeduardo96/payment-microservice-${service}:latest"
@@ -50,7 +50,7 @@ jobs:
 
       - name: Push Docker images
         run: |
-          services=("api-gateway" "client-service" "notification-service" "order-service" "payment-service" "service-registry")
+          services=("api-gateway" "client-service" "notification-service" "order-service" "payment-service" "service-registry" "frontend")
 
           for service in "${services[@]}"; do
             docker push "jorgeeduardo96/payment-microservice-${service}:latest"

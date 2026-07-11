@@ -38,3 +38,10 @@ export interface CreateOrderPayload {
   shippingAddress: string
   notes?: string | null
 }
+
+export interface NotificationMessage {
+  type: string
+  title: string
+  message: string
+  timestamp: string
+}

@@ -14,15 +14,20 @@ export default defineConfig({
     },
   },
   server: {
-    port: 3000,
+    port: 8000,
     proxy: {
-      '/client': {
+      '^/client($|/.*)': {
         target: 'http://localhost:8080',
         changeOrigin: true,
       },
-      '/order': {
+      '^/order($|/.*)': {
         target: 'http://localhost:8080',
         changeOrigin: true,
+      },
+      '/ws-notifications': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        ws: true,
       },
     },
   },

@@ -106,6 +106,19 @@ public class OrderServiceTest {
     }
 
     @Test
+    void getAllOrders() {
+        var mockedOutput = mock(OrderOutputDTO.class);
+
+        when(repository.findAll()).thenReturn(List.of(mockedOutput));
+
+        List<OrderOutputDTO> result = underTest.getAllOrders();
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0)).isEqualTo(mockedOutput);
+        verify(repository).findAll();
+    }
+
+    @Test
     void getOrdersByClientId_throwsExceptionWhenClientNotFound() {
         var clientId = UUID.randomUUID();
         when(clientRepository.findById(clientId)).thenReturn(Optional.empty());

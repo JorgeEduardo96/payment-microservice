@@ -5,6 +5,7 @@ import type { Order, CreateOrderPayload } from '@/types'
 
 export const useOrdersStore = defineStore('orders', () => {
   const orders = ref<Order[]>([])
+  const allOrders = ref<Order[]>([])
   const loading = ref(false)
   const activeClientId = ref<string | null>(null)
 
@@ -33,10 +34,21 @@ export const useOrdersStore = defineStore('orders', () => {
     }
   }
 
+  async function fetchAll(): Promise<Order[]> {
+    loading.value = true
+    try {
+      const { data } = await orderApi.getAll()
+      allOrders.value = data
+      return data
+    } finally {
+      loading.value = false
+    }
+  }
+
   function clear(): void {
     orders.value = []
     activeClientId.value = null
   }
 
-  return { orders, loading, activeClientId, create, fetchByClient, clear }
+  return { orders, allOrders, loading, activeClientId, create, fetchByClient, fetchAll, clear }
 })

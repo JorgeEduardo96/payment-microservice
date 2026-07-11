@@ -24,6 +24,11 @@ public class OrderController {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.createOrder(dto));
     }
 
+    @GetMapping
+    public ResponseEntity<List<OrderOutputDTO>> getAllOrders() {
+        return ResponseEntity.ok(service.getAllOrders());
+    }
+
     @GetMapping("/client/{clientId}")
     public ResponseEntity<List<OrderOutputDTO>> getOrdersByClient(@PathVariable UUID clientId) {
         return ResponseEntity.ok(service.getOrdersByClientId(clientId));

@@ -56,4 +56,19 @@ public class OrderRepositoryImpl implements OrderRepository {
                 )
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public List<OrderOutputDTO> findAll() {
+        return repository.findAll().stream()
+                .map(order -> OrderOutputDTO.builder()
+                        .id(order.getId())
+                        .total(order.getTotal())
+                        .shippingAddress(order.getShippingAddress())
+                        .clientName(order.getClient().getName())
+                        .status(order.getStatus())
+                        .paymentMethod(order.getPaymentMethod())
+                        .build()
+                )
+                .collect(Collectors.toList());
+    }
 }

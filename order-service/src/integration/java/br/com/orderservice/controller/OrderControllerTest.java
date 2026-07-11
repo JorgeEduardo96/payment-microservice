@@ -102,6 +102,22 @@ public class OrderControllerTest {
 
 
     @Test
+    void shouldReturnListOfAllOrders() throws Exception {
+        var orderInputDTO = new OrderInputDTO(clientId, new BigDecimal("100.00"), "Portugal", PaymentMethod.CARD, null);
+        orderRepository.createOrder(orderInputDTO);
+
+        mockMvc.perform(get("/order")
+                        .contentType("application/json")
+                        .header("X-From-Gateway", "true"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].clientName").value(clientName))
+                .andExpect(jsonPath("$[0].total").value(100.00))
+                .andExpect(jsonPath("$[0].shippingAddress").value("Portugal"))
+                .andExpect(jsonPath("$[0].status").value("PENDING_PAYMENT"))
+                .andExpect(jsonPath("$[0].paymentMethod").value("CARD"));
+    }
+
+    @Test
     void shouldReturnNotFoundWhenSearchingForUnexistingClient() throws Exception {
         mockMvc.perform(get("/order/client/" + UUID.randomUUID())
                         .contentType("application/json")

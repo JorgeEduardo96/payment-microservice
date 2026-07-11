@@ -9,7 +9,7 @@
             <h1 class="text-h4 font-weight-bold mb-2">Payment Microservice</h1>
             <p class="text-body-1 text-medium-emphasis mb-4">
               Manage clients and orders through a distributed Spring Boot microservices architecture
-              with Kafka event streaming and gRPC communication.
+              with Kafka event streaming, gRPC communication, and real-time WebSocket notifications.
             </p>
             <v-btn color="primary" to="/clients" prepend-icon="mdi-account-plus" class="mr-2">
               New Client
@@ -29,38 +29,38 @@
     <v-row class="mb-6">
       <v-col cols="12" sm="6" md="3">
         <StatCard
-          icon="mdi-account-group"
-          icon-color="primary"
-          label="Clients Loaded"
-          :value="clientsStore.clients.length"
-          to="/clients"
+            icon="mdi-account-group"
+            icon-color="primary"
+            label="Clients Loaded"
+            :value="clientsStore.clients.length"
+            to="/clients"
         />
       </v-col>
       <v-col cols="12" sm="6" md="3">
         <StatCard
-          icon="mdi-cart"
-          icon-color="secondary"
-          label="Orders Viewed"
-          :value="ordersStore.orders.length"
-          to="/orders"
+            icon="mdi-cart"
+            icon-color="secondary"
+            label="Orders Viewed"
+            :value="ordersStore.allOrders.length"
+            to="/orders"
         />
       </v-col>
       <v-col cols="12" sm="6" md="3">
         <StatCard
-          icon="mdi-check-circle"
-          icon-color="success"
-          label="Paid Orders"
-          :value="paidOrders"
-          to="/orders"
+            icon="mdi-check-circle"
+            icon-color="success"
+            label="Paid Orders"
+            :value="paidOrders"
+            to="/orders"
         />
       </v-col>
       <v-col cols="12" sm="6" md="3">
         <StatCard
-          icon="mdi-close-circle"
-          icon-color="error"
-          label="Failed Orders"
-          :value="failedOrders"
-          to="/orders"
+            icon="mdi-close-circle"
+            icon-color="error"
+            label="Failed Orders"
+            :value="failedOrders"
+            to="/orders"
         />
       </v-col>
     </v-row>
@@ -76,12 +76,12 @@
           <v-card-text class="pa-5">
             <v-list density="compact" lines="two">
               <v-list-item
-                v-for="svc in services"
-                :key="svc.name"
-                :prepend-icon="svc.icon"
-                :title="svc.name"
-                :subtitle="svc.description"
-                rounded="lg"
+                  v-for="svc in services"
+                  :key="svc.name"
+                  :prepend-icon="svc.icon"
+                  :title="svc.name"
+                  :subtitle="svc.description"
+                  rounded="lg"
               >
                 <template #append>
                   <v-chip size="x-small" :color="svc.color" variant="tonal">
@@ -103,10 +103,10 @@
           <v-card-text class="pa-5">
             <v-timeline density="compact" side="end">
               <v-timeline-item
-                v-for="step in orderFlow"
-                :key="step.title"
-                :dot-color="step.color"
-                size="small"
+                  v-for="step in orderFlow"
+                  :key="step.title"
+                  :dot-color="step.color"
+                  size="small"
               >
                 <div class="text-subtitle-2 font-weight-medium">{{ step.title }}</div>
                 <div class="text-caption text-medium-emphasis">{{ step.description }}</div>
@@ -120,10 +120,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, defineComponent, h } from 'vue'
-import { useRouter } from 'vue-router'
-import { useClientsStore } from '@/stores/clients'
-import { useOrdersStore } from '@/stores/orders'
+import {computed, onMounted} from 'vue'
+import {useClientsStore} from '@/stores/clients'
+import {useOrdersStore} from '@/stores/orders'
+import StatCard from '@/components/StatCard.vue'
 
 interface Service {
   name: string
@@ -141,60 +141,65 @@ interface OrderFlowStep {
 
 const clientsStore = useClientsStore()
 const ordersStore = useOrdersStore()
-const router = useRouter()
 
-const paidOrders = computed(() => ordersStore.orders.filter((o) => o.status === 'PAID').length)
-const failedOrders = computed(() => ordersStore.orders.filter((o) => o.status === 'FAILED').length)
+const paidOrders = computed(() => ordersStore.allOrders.filter((o) => o.status === 'PAID').length)
+const failedOrders = computed(() => ordersStore.allOrders.filter((o) => o.status === 'FAILED').length)
+
+onMounted(async () => {
+  if (clientsStore.clients.length === 0) {
+    await clientsStore.fetchAll()
+  }
+  if (ordersStore.allOrders.length === 0) {
+    await ordersStore.fetchAll()
+  }
+})
 
 const services: Service[] = [
-  { name: 'API Gateway', description: 'Entry point — routes to all services', icon: 'mdi-gate', port: 8080, color: 'primary' },
-  { name: 'Client Service', description: 'REST API for client management', icon: 'mdi-account-cog', port: 8081, color: 'secondary' },
-  { name: 'Order Service', description: 'REST API + Kafka consumer for orders', icon: 'mdi-cart-cog', port: 8082, color: 'info' },
-  { name: 'Payment Service', description: 'gRPC server for payment processing', icon: 'mdi-credit-card-settings', port: 9090, color: 'warning' },
-  { name: 'Notification Service', description: 'SendGrid email notifications', icon: 'mdi-email-fast', port: 8084, color: 'success' },
+  {
+    name: 'API Gateway',
+    description: 'Entry point — routes to all services',
+    icon: 'mdi-gate',
+    port: 8080,
+    color: 'primary'
+  },
+  {
+    name: 'Client Service',
+    description: 'REST API for client management',
+    icon: 'mdi-account-cog',
+    port: 8081,
+    color: 'secondary'
+  },
+  {
+    name: 'Order Service',
+    description: 'REST API + Kafka consumer for orders',
+    icon: 'mdi-gift',
+    port: 8082,
+    color: 'info'
+  },
+  {
+    name: 'Payment Service',
+    description: 'gRPC server for payment processing',
+    icon: 'mdi-credit-card-settings',
+    port: 9090,
+    color: 'warning'
+  },
+  {
+    name: 'Notification Service',
+    description: 'SendGrid email + WebSocket/STOMP notifications',
+    icon: 'mdi-email-fast',
+    port: 8084,
+    color: 'success'
+  },
 ]
 
 const orderFlow: OrderFlowStep[] = [
-  { title: 'Create Client', description: 'POST /client — registered in client-service', color: 'primary' },
-  { title: 'Place Order', description: 'POST /order — status: PENDING_PAYMENT', color: 'secondary' },
-  { title: 'gRPC Payment', description: 'order-service calls payment-service via gRPC', color: 'warning' },
-  { title: 'Kafka Event', description: 'payment-service publishes result to Kafka topic', color: 'info' },
-  { title: 'Status Updated', description: 'order-service consumes event → PAID or FAILED', color: 'success' },
-  { title: 'Email Sent', description: 'notification-service sends email via SendGrid', color: 'success' },
+  {title: 'Create Client', description: 'POST /client — registered in client-service', color: 'primary'},
+  {title: 'Place Order', description: 'POST /order — status: PENDING_PAYMENT', color: 'secondary'},
+  {title: 'gRPC Payment', description: 'order-service calls payment-service via gRPC', color: 'warning'},
+  {title: 'Kafka Event', description: 'payment-service publishes result to Kafka topic', color: 'info'},
+  {title: 'Status Updated', description: 'order-service consumes event → PAID or FAILED', color: 'success'},
+  {title: 'Email Sent', description: 'notification-service sends email via SendGrid', color: 'success'},
 ]
-
-// Inline StatCard component
-const StatCard = defineComponent({
-  props: {
-    icon: { type: String, required: true },
-    iconColor: { type: String, required: true },
-    label: { type: String, required: true },
-    value: { type: Number, required: true },
-    to: { type: String, required: true },
-  },
-  setup(props) {
-    return () =>
-      h(
-        'v-card',
-        {
-          rounded: 'xl',
-          elevation: 0,
-          border: true,
-          style: 'cursor:pointer',
-          onClick: () => router.push(props.to),
-        },
-        [
-          h('v-card-text', { class: 'pa-5' }, [
-            h('div', { class: 'd-flex align-center justify-space-between mb-3' }, [
-              h('v-icon', { color: props.iconColor, size: 28 }, props.icon),
-              h('div', { class: `text-h4 font-weight-bold text-${props.iconColor}` }, props.value),
-            ]),
-            h('div', { class: 'text-body-2 text-medium-emphasis' }, props.label),
-          ]),
-        ],
-      )
-  },
-})
 </script>
 
 <style scoped>

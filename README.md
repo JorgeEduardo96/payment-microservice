@@ -2,9 +2,9 @@
 
 ## Overview
 
-This project demonstrates a modern and resilient microservices architecture using **Spring Boot**, **Gradle**, and **Apache Kafka**
-as the event backbone. It follows best practices for scalability, decoupling, and observability with a
-didactic purpose.
+This project demonstrates a modern and resilient microservices architecture using **Spring Boot**, **Gradle**, **Apache Kafka**
+as the event backbone, and **WebSocket (STOMP)** for real-time, push-based communication with the frontend. It follows best
+practices for scalability, decoupling, and observability with a didactic purpose.
 
 ---
 
@@ -16,6 +16,7 @@ didactic purpose.
     - REST using Spring Web.
     - gRPC for high-performance internal communication.
     - Kafka for event-driven communication.
+    - WebSocket (STOMP) for real-time notifications pushed to the frontend.
 - **Shared Library:** A common Gradle library with Kafka utilities, validations, and custom exceptions.
 
 ![Payment Microservice's diagram](payment_microservice_diagram.png)
@@ -56,7 +57,7 @@ didactic purpose.
 payment-microservice/
 ├── api-gateway/           # API Gateway — Spring Cloud Gateway
 ├── client-service/        # Client microservice
-├── notification-service/  # Notification microservice (SendGrid)
+├── notification-service/  # Notification microservice (SendGrid + WebSocket/STOMP)
 ├── order-service/         # Order microservice
 ├── payment-service/       # Payment microservice (gRPC server)
 ├── service-registry/      # Eureka Server

@@ -58,6 +58,7 @@
           <v-icon start size="8">mdi-circle</v-icon>
           API Gateway :8080
         </v-chip>
+        <NotificationBell class="mr-2" />
       </template>
     </v-app-bar>
 
@@ -88,15 +89,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAppStore } from '@/stores/app'
+import { useNotificationsStore } from '@/stores/notifications'
+import NotificationBell from '@/components/NotificationBell.vue'
 
 const drawer = ref(true)
 const rail = ref(false)
 const theme = ref('light')
 const route = useRoute()
 const appStore = useAppStore()
+const notificationsStore = useNotificationsStore()
+
+onMounted(() => notificationsStore.connect())
+onUnmounted(() => notificationsStore.disconnect())
 
 const navItems = [
   { title: 'Dashboard', icon: 'mdi-view-dashboard-outline', to: '/' },

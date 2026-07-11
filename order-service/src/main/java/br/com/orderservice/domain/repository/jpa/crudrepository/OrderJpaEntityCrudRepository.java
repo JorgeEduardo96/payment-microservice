@@ -14,4 +14,8 @@ public interface OrderJpaEntityCrudRepository extends JpaRepository<OrderJpaEnti
     @EntityGraph(attributePaths = "client")
     List<OrderJpaEntity> findByClientId(UUID clientId);
 
+    @Override
+    @EntityGraph(attributePaths = "client")
+    List<OrderJpaEntity> findAll();
+
 }

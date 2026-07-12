@@ -62,6 +62,7 @@ payment-microservice/
 ├── payment-service/       # Payment microservice (gRPC server)
 ├── service-registry/      # Eureka Server
 ├── shared-lib/            # Common shared library
+├── frontend/              # Vue 3 + Vuetify SPA
 ├── e2e-tests/             # End-to-end tests (full stack)
 ├── docker-compose.yml     # Full stack with observability tools
 └── docker-compose-e2e.yml # Lightweight stack for E2E tests
@@ -126,6 +127,13 @@ The E2E tests account for this by waiting for the Kafka event to be consumed bef
 
 > The regular `./gradlew build` does **not** run E2E tests — they are executed as a dedicated step in CI.
 
+### Frontend Tests
+
+- Location: `frontend/src/**/__test__`
+- Tools: Vitest, Vue Test Utils, @pinia/testing
+- Coverage: stores, API layer, components, and views
+- Run: `npm run test` (inside `frontend/`)
+
 ---
 
 ## How to Run Locally
@@ -150,6 +158,7 @@ The E2E tests account for this by waiting for the Kafka event to be consumed bef
 
 | Service     | URL                                   |
 |-------------|---------------------------------------|
+| Frontend    | http://localhost:8000                 |
 | API Gateway | http://localhost:8080                 |
 | Eureka      | http://localhost:8761                 |
 | Kafka UI    | http://localhost:8085                 |
@@ -165,6 +174,9 @@ The GitHub Actions workflow runs on every push or pull request to `main`:
 
 ```
 Build all services (unit + integration tests)
+        |
+        v
+Run frontend tests
         |
         v
 Build Docker images (local)

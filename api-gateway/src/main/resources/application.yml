@@ -14,6 +14,10 @@ spring:
           uri: lb://order-service
           predicates:
             - Path=/order/**
+        - id: notification-service-ws
+          uri: lb://notification-service
+          predicates:
+            - Path=/ws-notifications/**
 
 server:
   port: 8080

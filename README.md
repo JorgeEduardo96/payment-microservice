@@ -2,9 +2,9 @@
 
 ## Overview
 
-This project demonstrates a modern and resilient microservices architecture using **Spring Boot**, **Gradle**, and **Apache Kafka**
-as the event backbone. It follows best practices for scalability, decoupling, and observability with a
-didactic purpose.
+This project demonstrates a modern and resilient microservices architecture using **Spring Boot**, **Gradle**, **Apache Kafka**
+as the event backbone, and **WebSocket (STOMP)** for real-time, push-based communication with the frontend. It follows best
+practices for scalability, decoupling, and observability with a didactic purpose.
 
 ---
 
@@ -16,6 +16,7 @@ didactic purpose.
     - REST using Spring Web.
     - gRPC for high-performance internal communication.
     - Kafka for event-driven communication.
+    - WebSocket (STOMP) for real-time notifications pushed to the frontend.
 - **Shared Library:** A common Gradle library with Kafka utilities, validations, and custom exceptions.
 
 ![Payment Microservice's diagram](payment_microservice_diagram.png)
@@ -56,11 +57,12 @@ didactic purpose.
 payment-microservice/
 ├── api-gateway/           # API Gateway — Spring Cloud Gateway
 ├── client-service/        # Client microservice
-├── notification-service/  # Notification microservice (SendGrid)
+├── notification-service/  # Notification microservice (SendGrid + WebSocket/STOMP)
 ├── order-service/         # Order microservice
 ├── payment-service/       # Payment microservice (gRPC server)
 ├── service-registry/      # Eureka Server
 ├── shared-lib/            # Common shared library
+├── frontend/              # Vue 3 + Vuetify SPA
 ├── e2e-tests/             # End-to-end tests (full stack)
 ├── docker-compose.yml     # Full stack with observability tools
 └── docker-compose-e2e.yml # Lightweight stack for E2E tests
@@ -125,6 +127,13 @@ The E2E tests account for this by waiting for the Kafka event to be consumed bef
 
 > The regular `./gradlew build` does **not** run E2E tests — they are executed as a dedicated step in CI.
 
+### Frontend Tests
+
+- Location: `frontend/src/**/__test__`
+- Tools: Vitest, Vue Test Utils, @pinia/testing
+- Coverage: stores, API layer, components, and views
+- Run: `npm run test` (inside `frontend/`)
+
 ---
 
 ## How to Run Locally
@@ -149,6 +158,7 @@ The E2E tests account for this by waiting for the Kafka event to be consumed bef
 
 | Service     | URL                                   |
 |-------------|---------------------------------------|
+| Frontend    | http://localhost:8000                 |
 | API Gateway | http://localhost:8080                 |
 | Eureka      | http://localhost:8761                 |
 | Kafka UI    | http://localhost:8085                 |
@@ -164,6 +174,9 @@ The GitHub Actions workflow runs on every push or pull request to `main`:
 
 ```
 Build all services (unit + integration tests)
+        |
+        v
+Run frontend tests
         |
         v
 Build Docker images (local)

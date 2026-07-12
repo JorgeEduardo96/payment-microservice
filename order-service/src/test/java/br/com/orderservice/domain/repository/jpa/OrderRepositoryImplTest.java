@@ -104,4 +104,23 @@ public class OrderRepositoryImplTest {
         verifyNoMoreInteractions(repository, orderMapper);
     }
 
+    @Test
+    void findAll() {
+        var entity1 = mock(OrderJpaEntity.class);
+        var entity2 = mock(OrderJpaEntity.class);
+
+        var outputDto1 = mock(OrderOutputDTO.class);
+        var outputDto2 = mock(OrderOutputDTO.class);
+
+        when(repository.findAll()).thenReturn(List.of(entity1, entity2));
+        when(entity1.getClient()).thenReturn(mock(ClientJpaEntity.class));
+        when(entity2.getClient()).thenReturn(mock(ClientJpaEntity.class));
+
+        List<OrderOutputDTO> result = underTest.findAll();
+
+        verify(repository).findAll();
+        assertThat(result).containsExactly(outputDto1, outputDto2);
+        verifyNoMoreInteractions(repository, orderMapper);
+    }
+
 }

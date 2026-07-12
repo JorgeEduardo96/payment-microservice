@@ -48,3 +48,8 @@ Thumbs.db
 .vscode/
 
 *.db
+
+### FE
+node_modules/
+dist/
+

@@ -1,7 +1,9 @@
 package br.com.notificationservice.messaging.consumer;
 
 import br.com.notificationservice.domain.dto.ClientEventDTO;
+import br.com.notificationservice.domain.dto.NotificationMessage;
 import br.com.notificationservice.domain.repository.ClientRepository;
+import br.com.notificationservice.domain.service.WebSocketNotificationService;
 import br.com.notificationservice.messaging.ClientConsumer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -25,22 +27,43 @@ class ClientConsumerTest {
     @Mock
     private ClientRepository clientRepository;
 
+    @Mock
+    private WebSocketNotificationService webSocketNotificationService;
+
     @InjectMocks
     private ClientConsumer underTest;
 
     @Test
-    void consume() throws JsonProcessingException {
+    void consume_shouldNotifyWhenClientIsCreated() throws JsonProcessingException {
         var message = "{\"id\":\"123e4567-e89b-12d3-a456-426614174000\",\"name\":\"John Doe\",\"createdAt\":\"2023-10-01T12:00:00Z\",\"updatedAt\":null}";
         var mockedClientEvent = mock(ClientEventDTO.class);
 
         when(objectMapper.readValue(message, ClientEventDTO.class))
                 .thenReturn(mockedClientEvent);
         when(mockedClientEvent.id()).thenReturn(UUID.fromString("123e4567-e89b-12d3-a456-426614174000"));
+        when(mockedClientEvent.name()).thenReturn("John Doe");
 
-        underTest.consume(message);
+        underTest.consume(message, "client-created-topic");
 
         verify(objectMapper).readValue(message, ClientEventDTO.class);
         verify(clientRepository).upsert(mockedClientEvent);
+        verify(webSocketNotificationService).notify(any(NotificationMessage.class));
+    }
+
+    @Test
+    void consume_shouldNotNotifyWhenClientIsUpdated() throws JsonProcessingException {
+        var message = "{\"id\":\"123e4567-e89b-12d3-a456-426614174000\",\"name\":\"John Doe\",\"createdAt\":\"2023-10-01T12:00:00Z\",\"updatedAt\":\"2023-10-02T12:00:00Z\"}";
+        var mockedClientEvent = mock(ClientEventDTO.class);
+
+        when(objectMapper.readValue(message, ClientEventDTO.class))
+                .thenReturn(mockedClientEvent);
+        when(mockedClientEvent.id()).thenReturn(UUID.fromString("123e4567-e89b-12d3-a456-426614174000"));
+
+        underTest.consume(message, "client-updated-topic");
+
+        verify(objectMapper).readValue(message, ClientEventDTO.class);
+        verify(clientRepository).upsert(mockedClientEvent);
+        verify(webSocketNotificationService, never()).notify(any(NotificationMessage.class));
     }
 
 }

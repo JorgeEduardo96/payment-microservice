@@ -41,6 +41,20 @@ public class OrderControllerTest {
 
     @Test
     @SuppressWarnings("unchecked")
+    void getAllOrders() {
+        var expectedResult = mock(List.class);
+
+        when(orderService.getAllOrders()).thenReturn(expectedResult);
+
+        var result = underTest.getAllOrders();
+
+        assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(result.getBody()).isEqualTo(expectedResult);
+        verify(orderService).getAllOrders();
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
     void getOrdersByClient() {
         var clientId = UUID.randomUUID();
         var expectedResult = mock(List.class);

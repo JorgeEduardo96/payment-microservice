@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -18,6 +19,11 @@ import java.util.UUID;
 public class ClientController {
 
     private final ClientService service;
+
+    @GetMapping
+    public ResponseEntity<List<ClientOutputDTO>> getAllClients() {
+        return ResponseEntity.ok(service.findAll());
+    }
 
     @GetMapping("/{id}")
     public ResponseEntity<ClientOutputDTO> fetchClientById(@PathVariable UUID id) {

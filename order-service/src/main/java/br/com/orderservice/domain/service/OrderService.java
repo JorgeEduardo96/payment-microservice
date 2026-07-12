@@ -48,6 +48,10 @@ public class OrderService {
         return repository.ordersByClientId(clientId);
     }
 
+    public List<OrderOutputDTO> getAllOrders() {
+        return repository.findAll();
+    }
+
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void cancelOrder(UUID orderId) {
         var order = repository.findOrderById(orderId);

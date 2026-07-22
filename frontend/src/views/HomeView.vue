@@ -11,7 +11,8 @@
               Manage clients and orders through a distributed Spring Boot microservices architecture
               with Kafka event streaming, gRPC communication, and real-time WebSocket notifications.
             </p>
-            <v-btn color="primary" to="/clients" prepend-icon="mdi-account-plus" class="mr-2">
+            <v-btn v-if="isAuthenticatedAndAdmin" color="primary" to="/clients" prepend-icon="mdi-account-plus"
+                   class="mr-2">
               New Client
             </v-btn>
             <v-btn variant="tonal" to="/orders" prepend-icon="mdi-cart-plus">
@@ -27,7 +28,7 @@
 
     <!-- Stats Row -->
     <v-row class="mb-6">
-      <v-col cols="12" sm="6" md="3">
+      <v-col cols="12" sm="6" md="3" v-if="isAuthenticatedAndAdmin">
         <StatCard
             icon="mdi-account-group"
             icon-color="primary"
@@ -41,7 +42,7 @@
             icon="mdi-cart"
             icon-color="secondary"
             label="Orders Viewed"
-            :value="ordersStore.allOrders.length"
+            :value="relevantOrders.length"
             to="/orders"
         />
       </v-col>
@@ -124,6 +125,7 @@ import {computed, onMounted} from 'vue'
 import {useClientsStore} from '@/stores/clients'
 import {useOrdersStore} from '@/stores/orders'
 import StatCard from '@/components/StatCard.vue'
+import {useAuthStore} from "@/stores/auth.ts";
 
 interface Service {
   name: string
@@ -141,16 +143,29 @@ interface OrderFlowStep {
 
 const clientsStore = useClientsStore()
 const ordersStore = useOrdersStore()
+const authStore = useAuthStore()
 
-const paidOrders = computed(() => ordersStore.allOrders.filter((o) => o.status === 'PAID').length)
-const failedOrders = computed(() => ordersStore.allOrders.filter((o) => o.status === 'FAILED').length)
+const relevantOrders = computed(() => authStore.isAdmin ? ordersStore.allOrders : ordersStore.orders)
+
+const paidOrders = computed(() => relevantOrders.value.filter((o) => o.status === 'PAID').length)
+const failedOrders = computed(() => relevantOrders.value.filter((o) => o.status === 'FAILED').length)
+
+const isAuthenticatedAndAdmin = computed(() => {
+  return authStore.isAuthenticated && authStore.isAdmin
+})
 
 onMounted(async () => {
-  if (clientsStore.clients.length === 0) {
+  if (clientsStore.clients.length === 0 && isAuthenticatedAndAdmin.value) {
     await clientsStore.fetchAll()
   }
-  if (ordersStore.allOrders.length === 0) {
-    await ordersStore.fetchAll()
+  if (authStore.isAdmin) {
+    if (ordersStore.allOrders.length === 0) {
+      await ordersStore.fetchAll()
+    }
+  } else if (authStore.isClient && authStore.clientId) {
+    if (ordersStore.orders.length === 0) {
+      await ordersStore.fetchByClient(authStore.clientId)
+    }
   }
 })
 

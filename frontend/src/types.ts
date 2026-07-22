@@ -44,4 +44,6 @@ export interface NotificationMessage {
   title: string
   message: string
   timestamp: string
+  orderId?: string
+  orderStatus?: string
 }

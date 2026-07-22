@@ -17,7 +17,7 @@ public class PaymentService {
     private final OrderService orderService;
     private final PaymentGrpcClient paymentGrpcClient;
 
-    @Retry(name = "defaultGrpcClientRetry", fallbackMethod = "fallbackProcessPayment")
+    @Retry(name = "payment", fallbackMethod = "fallbackProcessPayment")
     public void processPayment(PaymentRequest paymentRequest) {
         log.info("Processing payment for order: {}", paymentRequest.getOrderId());
         paymentGrpcClient.processPayment(paymentRequest);

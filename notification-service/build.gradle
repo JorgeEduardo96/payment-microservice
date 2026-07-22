@@ -52,6 +52,7 @@ dependencies {
     // Spring Boot Starters
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
     implementation 'org.springframework.kafka:spring-kafka'
@@ -60,7 +61,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
     // Shared lib
-    implementation 'br.com.sharedlib:shared-lib:1.0.2'
+    implementation 'br.com.sharedlib:shared-lib:1.0.3'
 
     // Sendgrid
     implementation 'com.sendgrid:sendgrid-java:4.10.2'

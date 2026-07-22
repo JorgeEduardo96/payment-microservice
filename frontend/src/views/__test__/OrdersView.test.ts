@@ -16,6 +16,9 @@ vi.mock('@/api/clientApi', () => ({
 vi.mock('@/api/orderApi', () => ({
   orderApi: { create: vi.fn(), getByClientId: vi.fn(), getAll: vi.fn() },
 }))
+vi.mock('@/stores/auth.ts', () => ({
+  useAuthStore: () => ({ isAdmin: true, isClient: false, clientId: null }),
+}))
 
 const order: Order = {
   id: 'o1',

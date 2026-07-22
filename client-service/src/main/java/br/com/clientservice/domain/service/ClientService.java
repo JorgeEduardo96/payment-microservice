@@ -22,11 +22,14 @@ public class ClientService {
 
     private final ClientRepository repository;
     private final ApplicationEventPublisher publisher;
+    private final KeycloakUserProvisioningService keycloakUserProvisioningService;
 
     @Transactional
     public ClientOutputDTO insert(ClientCreateInputDTO inputDTO) {
         var persisted = repository.insert(inputDTO);
         log.info("New client persisted, id: {}", persisted.id());
+
+        keycloakUserProvisioningService.createUser(persisted.name(), persisted.email(), persisted.id());
 
         publisher.publishEvent(new ClientCreatedEvent(persisted));
 

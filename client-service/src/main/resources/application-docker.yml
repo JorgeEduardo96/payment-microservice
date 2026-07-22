@@ -50,6 +50,15 @@ eureka:
     service-url:
       defaultZone: http://service-registry:8761/eureka/
 
+client-service:
+  keycloak:
+    token-uri: http://keycloak:8080/realms/payment-microservice/protocol/openid-connect/token
+    admin-base-uri: http://keycloak:8080/admin/realms/payment-microservice
+    client-id: client-service
+    client-secret: client-service-secret
+    default-password: client123
+    client-role-name: CLIENT
+
 resilience4j:
   retry:
     instances:

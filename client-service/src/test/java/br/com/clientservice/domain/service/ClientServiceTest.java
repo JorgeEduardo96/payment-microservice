@@ -25,6 +25,8 @@ class ClientServiceTest {
     private ClientRepository clientRepository;
     @Mock
     private ApplicationEventPublisher applicationEventPublisher;
+    @Mock
+    private KeycloakUserProvisioningService keycloakUserProvisioningService;
 
     @InjectMocks
     private ClientService underTest;
@@ -40,6 +42,7 @@ class ClientServiceTest {
 
         ClientOutputDTO expectedResult = underTest.insert(mockInputDTO);
 
+        verify(keycloakUserProvisioningService).createUser(actualResult.name(), actualResult.email(), actualResult.id());
         verify(applicationEventPublisher).publishEvent(any(ClientCreatedEvent.class));
         verify(clientRepository).insert(mockInputDTO);
 

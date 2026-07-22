@@ -23,14 +23,18 @@ public class PaymentServiceImpl extends PaymentServiceGrpc.PaymentServiceImplBas
         this.paymentProducer = paymentProducer;
     }
 
+    private static final long SIMULATED_PROCESSING_DELAY_MS = 3000;
+
     @Override
     public void processPayment(PaymentRequest request, StreamObserver<Empty> responseObserver) {
         var orderId = request.getOrderId();
-        var status = isLastCharacterLetter(orderId) ? "PAID" : "FAILED";
         var paymentMethod = request.getPaymentMethod();
         var clientId = request.getClientId();
 
         logger.info("Processing payment for orderId: {}", orderId);
+        simulateProcessingDelay();
+
+        var status = isLastCharacterLetter(orderId) ? "PAID" : "FAILED";
         try {
             paymentProducer.sendPaymentEvent("payment-topic", new PaymentResponseDTO(UUID.fromString(orderId),
                     status, paymentMethod, UUID.fromString(clientId)));
@@ -40,6 +44,14 @@ public class PaymentServiceImpl extends PaymentServiceGrpc.PaymentServiceImplBas
 
         responseObserver.onNext(Empty.getDefaultInstance());
         responseObserver.onCompleted();
+    }
+
+    private void simulateProcessingDelay() {
+        try {
+            Thread.sleep(SIMULATED_PROCESSING_DELAY_MS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     private boolean isLastCharacterLetter(String id) {

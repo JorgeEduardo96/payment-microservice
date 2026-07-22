@@ -2,6 +2,7 @@ package br.com.notificationservice.domain.service;
 
 import br.com.notificationservice.config.SendNotification;
 import br.com.notificationservice.domain.dto.ClientEventDTO;
+import br.com.notificationservice.domain.dto.NotificationMessage;
 import br.com.notificationservice.domain.dto.PaymentResponseEventDTO;
 import br.com.notificationservice.domain.repository.ClientRepository;
 import org.junit.jupiter.api.Test;
@@ -21,12 +22,14 @@ class NotificationServiceTest {
     private ClientRepository clientRepository;
     @Mock
     private SendNotification sendNotification;
+    @Mock
+    private WebSocketNotificationService webSocketNotificationService;
 
     @InjectMocks
     private NotificationService underTest;
 
     @Test
-    void sendNotification_shouldSendNotificationWhenPaymentIsPaid() {
+    void sendNotification_shouldSendEmailAndWebSocketNotificationWhenPaymentIsPaid() {
         var mockedEventResponse = mock(PaymentResponseEventDTO.class);
         var mockedClient = mock(ClientEventDTO.class);
         var orderId = UUID.randomUUID();
@@ -46,16 +49,23 @@ class NotificationServiceTest {
 
         verify(clientRepository).findById(clientId);
         verify(sendNotification).send(any(SendNotification.Message.class));
+        verify(webSocketNotificationService).notifyClient(eq(clientId.toString()), any(NotificationMessage.class));
     }
 
     @Test
-    void sendNotification_shouldNotSendNotificationWhenPaymentIsNotPaid() {
+    void sendNotification_shouldOnlySendWebSocketNotificationWhenPaymentFails() {
         var mockedEventResponse = mock(PaymentResponseEventDTO.class);
+        var orderId = UUID.randomUUID();
+        var clientId = UUID.randomUUID();
+
         when(mockedEventResponse.status()).thenReturn("FAILED");
+        when(mockedEventResponse.clientId()).thenReturn(clientId);
+        when(mockedEventResponse.orderId()).thenReturn(orderId);
 
         underTest.sendNotification(mockedEventResponse);
 
         verify(clientRepository, never()).findById(any(UUID.class));
         verify(sendNotification, never()).send(any(SendNotification.Message.class));
+        verify(webSocketNotificationService).notifyClient(eq(clientId.toString()), any(NotificationMessage.class));
     }
 }

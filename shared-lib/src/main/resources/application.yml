@@ -2,7 +2,7 @@ spring:
   application:
     name: shared-lib
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: localhost:19092
     consumer:
       group-id: order-service-group
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer

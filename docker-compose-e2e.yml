@@ -39,6 +39,24 @@ services:
     networks:
       - e2e-network
 
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    command: [ "start-dev", "--import-realm" ]
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "8180:8080"
+    volumes:
+      - ./keycloak/realm-export-e2e.json:/opt/keycloak/data/import/realm-export.json
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/8080"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+    networks:
+      - e2e-network
+
   api-gateway:
     image: jorgeeduardo96/payment-microservice-api-gateway:latest
     ports:
@@ -47,6 +65,8 @@ services:
       - SPRING_PROFILES_ACTIVE=docker
     depends_on:
       service-registry:
+        condition: service_healthy
+      keycloak:
         condition: service_healthy
     volumes:
       - ./scripts/wait-for-it.sh:/wait-for-it.sh
@@ -62,6 +82,8 @@ services:
       - SPRING_PROFILES_ACTIVE=docker
     depends_on:
       service-registry:
+        condition: service_healthy
+      keycloak:
         condition: service_healthy
     volumes:
       - ./scripts/wait-for-it.sh:/wait-for-it.sh

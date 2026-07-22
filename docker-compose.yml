@@ -69,6 +69,21 @@ services:
     networks:
       - payment-microservice-network
 
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    command: [ "start-dev", "--import-realm" ]
+    user: "0:0"
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "8180:8080"
+    volumes:
+      - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json
+      - keycloak-data:/opt/keycloak/data/h2
+    networks:
+      - payment-microservice-network
+
   service-registry:
     image: jorgeeduardo96/payment-microservice-service-registry:latest
     build:
@@ -96,6 +111,7 @@ services:
       - SPRING_PROFILES_ACTIVE=docker
     depends_on:
       - service-registry
+      - keycloak
     networks:
       - payment-microservice-network
     volumes:
@@ -191,6 +207,7 @@ services:
 
 volumes:
   grafana-storage:
+  keycloak-data:
 
 networks:
   payment-microservice-network:

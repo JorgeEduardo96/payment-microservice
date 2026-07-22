@@ -36,6 +36,14 @@ spring:
 server:
   port: 8084
 
+app:
+  security:
+    # See api-gateway's SecurityConfig: tokens carry the browser-facing issuer
+    # (localhost:8180), but inside Docker we must fetch signing keys via the
+    # internal Keycloak hostname.
+    issuer-uri: http://localhost:8180/realms/payment-microservice
+    jwk-set-uri: http://keycloak:8080/realms/payment-microservice/protocol/openid-connect/certs
+
 logging:
   pattern:
     level: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%X{traceId:-},%X{spanId:-}] %5p %c - %m%n"

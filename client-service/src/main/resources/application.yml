@@ -1,6 +1,8 @@
 spring:
   application:
     name: client-service
+  kafka:
+    bootstrap-servers: localhost:19092
   datasource:
     url: jdbc:h2:file:./data/clientdb
     driver-class-name: org.h2.Driver
@@ -44,6 +46,15 @@ eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
+
+client-service:
+  keycloak:
+    token-uri: http://localhost:8180/realms/payment-microservice/protocol/openid-connect/token
+    admin-base-uri: http://localhost:8180/admin/realms/payment-microservice
+    client-id: client-service
+    client-secret: client-service-secret
+    default-password: client123
+    client-role-name: CLIENT
 
 resilience4j:
   retry:

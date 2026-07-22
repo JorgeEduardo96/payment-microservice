@@ -22,6 +22,7 @@
       <v-row align="center" no-gutters>
         <v-col cols="12" md="5" class="pr-md-3 mb-3 mb-md-0">
           <v-select
+              :disabled="!authStore.isAdmin"
               v-model="selectedKnownClient"
               :items="clientsStore.clients"
               item-title="name"
@@ -45,6 +46,7 @@
         </v-col>
         <v-col cols="12" md="4" class="pr-md-3 mb-3 mb-md-0">
           <v-text-field
+              :disabled="!authStore.isAdmin"
               v-model="manualClientId"
               label="Enter Client UUID"
               placeholder="550e8400-e29b-41d4-a716-..."
@@ -269,6 +271,7 @@ import {useOrdersStore} from '@/stores/orders'
 import {useClientsStore} from '@/stores/clients'
 import {useAppStore} from '@/stores/app'
 import type {OrderStatus} from '@/types'
+import {useAuthStore} from "@/stores/auth.ts";
 
 interface OrderForm {
   total: string
@@ -284,6 +287,7 @@ interface FormInstance {
 const store = useOrdersStore()
 const clientsStore = useClientsStore()
 const appStore = useAppStore()
+const authStore = useAuthStore()
 const route = useRoute()
 
 const manualClientId = ref<string>('')
@@ -400,10 +404,17 @@ const submit = async (): Promise<void> => {
 
 onMounted(async () => {
   if (clientsStore.clients.length === 0) {
-    await clientsStore.fetchAll()
+    if (authStore.isAdmin) {
+      await clientsStore.fetchAll()
+    } else {
+      const loggerUserId = authStore.clientId ?? ''
+      await clientsStore.fetchById(loggerUserId)
+      selectedKnownClient.value = loggerUserId
+      await loadOrders()
+    }
   }
 
-  // Auto-load if redirected from clients page with a clientId query param
+  // Autoload if redirected from clients page with a clientId query param
   const clientId = route.query.clientId as string | undefined
   if (clientId) {
     const known = clientsStore.clients.find((c) => c.id === clientId)

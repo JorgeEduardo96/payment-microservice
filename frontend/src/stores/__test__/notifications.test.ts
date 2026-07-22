@@ -28,6 +28,20 @@ vi.mock('@/stores/clients.ts', () => ({
   useClientsStore: () => ({ fetchAll: fetchAllMock }),
 }))
 
+const updateOrderStatusMock = vi.fn()
+vi.mock('@/stores/orders.ts', () => ({
+  useOrdersStore: () => ({ updateOrderStatus: updateOrderStatusMock }),
+}))
+
+const authStoreState = { isAdmin: true, isClient: false }
+vi.mock('@/stores/auth.ts', () => ({
+  useAuthStore: () => authStoreState,
+}))
+
+vi.mock('@/auth/userManager', () => ({
+  default: { getUser: vi.fn().mockResolvedValue({ access_token: 'fake-access-token' }) },
+}))
+
 const notification: NotificationMessage = {
   type: 'CLIENT_CREATED',
   title: 'New client registered',
@@ -41,13 +55,15 @@ describe('useNotificationsStore', () => {
     vi.clearAllMocks()
     vi.resetModules()
     capturedConfig = {}
+    authStoreState.isAdmin = true
+    authStoreState.isClient = false
   })
 
   it('connect activates a STOMP client pointing at /ws-notifications', async () => {
     const { useNotificationsStore } = await import('../notifications')
     const store = useNotificationsStore()
 
-    store.connect()
+    await store.connect()
 
     expect(activateMock).toHaveBeenCalled()
     expect(store.connected).toBe(false)
@@ -57,8 +73,8 @@ describe('useNotificationsStore', () => {
     const { useNotificationsStore } = await import('../notifications')
     const store = useNotificationsStore()
 
-    store.connect()
-    store.connect()
+    await store.connect()
+    await store.connect()
 
     expect(activateMock).toHaveBeenCalledTimes(1)
   })
@@ -67,7 +83,7 @@ describe('useNotificationsStore', () => {
     const { useNotificationsStore } = await import('../notifications')
     const store = useNotificationsStore()
 
-    store.connect()
+    await store.connect()
     capturedConfig.onConnect?.()
 
     expect(store.connected).toBe(true)
@@ -78,7 +94,7 @@ describe('useNotificationsStore', () => {
     const { useNotificationsStore } = await import('../notifications')
     const store = useNotificationsStore()
 
-    store.connect()
+    await store.connect()
     capturedConfig.onConnect?.()
     const handler = subscribeMock.mock.calls[0][1]
     handler({ body: JSON.stringify(notification) })
@@ -93,7 +109,7 @@ describe('useNotificationsStore', () => {
     const { useNotificationsStore } = await import('../notifications')
     const store = useNotificationsStore()
 
-    store.connect()
+    await store.connect()
     capturedConfig.onConnect?.()
     capturedConfig.onDisconnect?.()
 
@@ -104,7 +120,7 @@ describe('useNotificationsStore', () => {
     const { useNotificationsStore } = await import('../notifications')
     const store = useNotificationsStore()
 
-    store.connect()
+    await store.connect()
     capturedConfig.onConnect?.()
     store.disconnect()
 
@@ -116,7 +132,7 @@ describe('useNotificationsStore', () => {
     const { useNotificationsStore } = await import('../notifications')
     const store = useNotificationsStore()
 
-    store.connect()
+    await store.connect()
     capturedConfig.onConnect?.()
     const handler = subscribeMock.mock.calls[0][1]
     handler({ body: JSON.stringify(notification) })
@@ -126,5 +142,43 @@ describe('useNotificationsStore', () => {
     expect(store.unreadCount).toBe(0)
     expect(store.hasUnread).toBe(false)
     expect(store.notifications).toEqual([notification])
+  })
+
+  it('subscribes to the per-user queue instead of the broadcast topic for CLIENT-role users', async () => {
+    authStoreState.isAdmin = false
+    authStoreState.isClient = true
+
+    const { useNotificationsStore } = await import('../notifications')
+    const store = useNotificationsStore()
+
+    await store.connect()
+    capturedConfig.onConnect?.()
+
+    expect(subscribeMock).toHaveBeenCalledWith('/user/queue/notifications', expect.any(Function))
+    expect(subscribeMock).not.toHaveBeenCalledWith('/topic/notifications', expect.any(Function))
+  })
+
+  it('updates the matching order status when a PAYMENT_CONFIRMED notification arrives', async () => {
+    authStoreState.isAdmin = false
+    authStoreState.isClient = true
+
+    const paymentNotification: NotificationMessage = {
+      type: 'PAYMENT_CONFIRMED',
+      title: 'Payment confirmed',
+      message: 'Your order has been paid.',
+      timestamp: '2026-01-01T00:00:00Z',
+      orderId: 'order-1',
+      orderStatus: 'PAID',
+    }
+
+    const { useNotificationsStore } = await import('../notifications')
+    const store = useNotificationsStore()
+
+    await store.connect()
+    capturedConfig.onConnect?.()
+    const handler = subscribeMock.mock.calls[0][1]
+    handler({ body: JSON.stringify(paymentNotification) })
+
+    expect(updateOrderStatusMock).toHaveBeenCalledWith('order-1', 'PAID')
   })
 })

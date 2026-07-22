@@ -38,6 +38,11 @@ eureka:
   client:
     enabled: false
 
+app:
+  security:
+    issuer-uri: http://localhost:8180/realms/payment-microservice
+    jwk-set-uri: http://localhost:8180/realms/payment-microservice/protocol/openid-connect/certs
+
 notification-service:
   notification:
     notification-type: fake

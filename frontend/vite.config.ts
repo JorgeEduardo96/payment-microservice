@@ -8,6 +8,9 @@ export default defineConfig({
     vue(),
     vuetify({ autoImport: true }),
   ],
+  define: {
+    __VUE_PROD_DEVTOOLS__: true,
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

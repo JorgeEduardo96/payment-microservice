@@ -21,7 +21,11 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
+// grpc.server.port=-1 disables the embedded gRPC server: this test only exercises the Kafka
+// producer, but payment-service's context auto-starts a real gRPC server on the fixed port 9090
+// (see application-integration.yml) — leaving it enabled here races with
+// PaymentServiceGrpcIntegrationTest's own context for the same port when both run in one JVM.
+@SpringBootTest(properties = "grpc.server.port=-1")
 @EmbeddedKafka(partitions = 1, topics = {"payment-topic"})
 @EnableKafka
 public class PaymentProducerIntegrationTest {

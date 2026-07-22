@@ -3,6 +3,7 @@ package br.com.clientservice.controller;
 import br.com.clientservice.domain.dto.ClientCreateInputDTO;
 import br.com.clientservice.domain.dto.ClientUpdateInputDTO;
 import br.com.clientservice.domain.repository.ClientRepository;
+import br.com.clientservice.domain.service.KeycloakUserProvisioningService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -10,6 +11,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -50,6 +52,11 @@ public class ClientControllerIntegrationTest {
     private ObjectMapper objectMapper;
     @Autowired
     private ClientRepository clientRepository;
+
+    // Keycloak isn't part of this test's infrastructure (only Kafka is, via Testcontainers) —
+    // this integration test is about client CRUD + Kafka production, not Keycloak provisioning.
+    @MockBean
+    private KeycloakUserProvisioningService keycloakUserProvisioningService;
 
     @Test
     void shouldCreateClientSuccessfully() throws Exception {

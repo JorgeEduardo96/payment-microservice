@@ -1,6 +1,7 @@
 package br.com.e2e;
 
 import io.restassured.RestAssured;
+import io.restassured.builder.RequestSpecBuilder;
 import org.junit.jupiter.api.BeforeAll;
 
 import java.io.File;
@@ -13,10 +14,14 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Random;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public abstract class BaseE2ETest {
 
     private static final String GATEWAY_BASE_URL = "http://localhost:8080";
+    private static final String KEYCLOAK_BASE_URL = "http://localhost:8180";
+    private static final String REALM = "payment-microservice";
     private static final File COMPOSE_FILE = resolveComposeFile();
     private static final Duration STARTUP_TIMEOUT = Duration.ofMinutes(5);
 
@@ -33,12 +38,22 @@ public abstract class BaseE2ETest {
         composeCommand("up", "--wait", "-d");
 
         // wait for all services to be healthy
+        waitForHealth("keycloak", KEYCLOAK_BASE_URL + "/realms/" + REALM);
         waitForHealth("api-gateway", "http://localhost:8080/actuator/health");
         waitForHealth("client-service", "http://localhost:8081/actuator/health");
         waitForHealth("order-service", "http://localhost:8082/actuator/health");
 
-        // wait for gateway to be routing (Eureka can take few minutes sometimes)
-        waitForGatewayRouting();
+        // Every test in this module drives the API as an authenticated ADMIN user (matching what
+        // the real frontend does after login) — the gateway now requires a valid Keycloak JWT for
+        // everything except /actuator and /ws-notifications. Fetching this here, once, means
+        // individual tests don't need to know anything about auth.
+        String adminToken = fetchAccessToken("admin", "admin123");
+
+        // Wait for gateway to be routing (Eureka can take a few minutes sometimes). This probe must
+        // be authenticated: without a token, Spring Security rejects the request with 401 before it
+        // ever reaches the routing filter, which would make the probe "pass" instantly regardless of
+        // whether Eureka registration has actually completed.
+        waitForGatewayRouting(adminToken);
 
         stackStarted = true;
 
@@ -53,6 +68,35 @@ public abstract class BaseE2ETest {
         }));
 
         RestAssured.baseURI = GATEWAY_BASE_URL;
+        RestAssured.requestSpecification = new RequestSpecBuilder()
+                .addHeader("Authorization", "Bearer " + adminToken)
+                .build();
+    }
+
+    /**
+     * Fetches a real access token from Keycloak via the Resource Owner Password Credentials grant.
+     * This grant is only enabled on the "frontend" client in the e2e realm (keycloak/realm-export-e2e.json) —
+     * the real app disables it and only ever uses the Authorization Code + PKCE flow from the browser.
+     */
+    protected static String fetchAccessToken(String username, String password) throws Exception {
+        HttpClient client = HttpClient.newHttpClient();
+        String form = "grant_type=password&client_id=frontend&username=" + username + "&password=" + password;
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(KEYCLOAK_BASE_URL + "/realms/" + REALM + "/protocol/openid-connect/token"))
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .POST(HttpRequest.BodyPublishers.ofString(form))
+                .build();
+
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() != 200) {
+            throw new RuntimeException("Failed to fetch token for " + username + ": " + response.statusCode() + " - " + response.body());
+        }
+
+        Matcher matcher = Pattern.compile("\"access_token\":\"([^\"]+)\"").matcher(response.body());
+        if (!matcher.find()) {
+            throw new RuntimeException("No access_token in Keycloak response: " + response.body());
+        }
+        return matcher.group(1);
     }
 
     // Helpers
@@ -137,7 +181,7 @@ public abstract class BaseE2ETest {
      * Wait until API Gateway can route to client-service via Eureka.
      * A GET /client/{uuid} with a random UUID should return 404 (not 502/503) when routing is ready.
      */
-    private static void waitForGatewayRouting() throws Exception {
+    private static void waitForGatewayRouting(String adminToken) throws Exception {
         String probeUrl = GATEWAY_BASE_URL + "/client/00000000-0000-0000-0000-000000000000";
         HttpClient client = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(3))
@@ -145,6 +189,7 @@ public abstract class BaseE2ETest {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(probeUrl))
                 .timeout(Duration.ofSeconds(3))
+                .header("Authorization", "Bearer " + adminToken)
                 .GET()
                 .build();
 

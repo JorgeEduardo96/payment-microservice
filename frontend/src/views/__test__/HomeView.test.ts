@@ -14,6 +14,10 @@ vi.mock('@/api/clientApi', () => ({
 vi.mock('@/api/orderApi', () => ({
   orderApi: { create: vi.fn(), getByClientId: vi.fn(), getAll: vi.fn() },
 }))
+const authStoreState = { isAuthenticated: true, isAdmin: true, isClient: false, clientId: null as string | null }
+vi.mock('@/stores/auth.ts', () => ({
+  useAuthStore: () => authStoreState,
+}))
 
 const client: Client = { id: 'c1', name: 'John Doe', email: 'john@doe.com', cpf: '52998224725', createdAt: '2026-01-01' }
 const paidOrder: Order = {
@@ -41,6 +45,9 @@ describe('HomeView', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
+    authStoreState.isAdmin = true
+    authStoreState.isClient = false
+    authStoreState.clientId = null
   })
 
   afterEach(() => {
@@ -85,5 +92,22 @@ describe('HomeView', () => {
     expect(activeWrapper.text()).toContain('Orders Viewed')
     const values = activeWrapper.findAll('div.text-h4').map((el) => el.text())
     expect(values).toEqual(['1', '2', '1', '1'])
+  })
+
+  it('shows only the logged-in client own orders when not admin', async () => {
+    authStoreState.isAdmin = false
+    authStoreState.isClient = true
+    authStoreState.clientId = 'c1'
+
+    vi.mocked(orderApi.getByClientId).mockResolvedValue({ data: [paidOrder, failedOrder] } as never)
+
+    activeWrapper = mount(HomeView, { attachTo: document.body })
+    await flushPromises()
+
+    expect(orderApi.getByClientId).toHaveBeenCalledWith('c1')
+    expect(orderApi.getAll).not.toHaveBeenCalled()
+
+    const values = activeWrapper.findAll('div.text-h4').map((el) => el.text())
+    expect(values).toEqual(['2', '1', '1'])
   })
 })

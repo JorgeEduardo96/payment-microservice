@@ -2,10 +2,12 @@ import { config } from '@vue/test-utils'
 import { createVuetify } from 'vuetify'
 import * as components from 'vuetify/components'
 import * as directives from 'vuetify/directives'
+import i18n from '@/plugins/i18n'
 
 const vuetify = createVuetify({ components, directives })
 
 config.global.plugins.push(vuetify)
+config.global.plugins.push(i18n)
 config.global.stubs = { transition: false, 'transition-group': false }
 
 // jsdom doesn't implement visualViewport or ResizeObserver, which Vuetify's

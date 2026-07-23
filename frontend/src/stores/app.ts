@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { reactive } from 'vue'
+import i18n from '@/plugins/i18n'
 
 interface Snackbar {
   show: boolean
@@ -26,7 +27,7 @@ export const useAppStore = defineStore('app', () => {
       error?.response?.data?.detail ||
       error?.response?.data?.title ||
       error?.message ||
-      'An unexpected error occurred'
+      i18n.global.t('errors.unexpected')
     notify(message, 'error')
   }
 

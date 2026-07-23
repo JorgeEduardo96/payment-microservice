@@ -47,6 +47,9 @@ Thumbs.db
 ### VS Code (if opened there) ###
 .vscode/
 
+### Claude Code ###
+.claude/
+
 *.db
 
 ### FE

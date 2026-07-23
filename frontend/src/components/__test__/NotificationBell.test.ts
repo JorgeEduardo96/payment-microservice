@@ -52,7 +52,7 @@ describe('NotificationBell', () => {
     await document.body.querySelector('button')?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
     await flushPromises()
 
-    expect(document.body.textContent).toContain('Nenhuma notificação por enquanto')
+    expect(document.body.textContent).toContain('No notifications yet')
   })
 
   it('lists notifications and marks them as read when opened', async () => {

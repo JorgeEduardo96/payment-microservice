@@ -3,10 +3,11 @@ import type { RouteRecordRaw } from 'vue-router'
 import HomeView from '@/views/HomeView.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useAppStore } from '@/stores/app'
+import i18n from '@/plugins/i18n'
 
 declare module 'vue-router' {
   interface RouteMeta {
-    title?: string
+    titleKey?: string
     requiresAdmin?: boolean
   }
 }
@@ -16,25 +17,25 @@ const routes: RouteRecordRaw[] = [
     path: '/',
     name: 'home',
     component: HomeView,
-    meta: { title: 'Dashboard' },
+    meta: { titleKey: 'nav.dashboard' },
   },
   {
     path: '/clients',
     name: 'clients',
     component: () => import('@/views/ClientsView.vue'),
-    meta: { title: 'Clients', requiresAdmin: true },
+    meta: { titleKey: 'nav.clients', requiresAdmin: true },
   },
   {
     path: '/orders',
     name: 'orders',
     component: () => import('@/views/OrdersView.vue'),
-    meta: { title: 'Orders' },
+    meta: { titleKey: 'nav.orders' },
   },
   {
     path: '/callback',
     name: 'callback',
     component: () => import('@/views/CallbackView.vue'),
-    meta: { title: 'Signing in' },
+    meta: { titleKey: 'routeTitles.signingIn' },
   },
 ]
 
@@ -61,7 +62,7 @@ router.beforeEach(async (to) => {
   }
 
   if (to.meta.requiresAdmin && !authStore.isAdmin) {
-    useAppStore().notify('You do not have permission to access this page', 'warning')
+    useAppStore().notify(i18n.global.t('errors.noPermission'), 'warning')
     return { name: 'home' }
   }
 
@@ -69,7 +70,8 @@ router.beforeEach(async (to) => {
 })
 
 router.afterEach((to) => {
-  document.title = `${to.meta.title ?? 'Payment'} — Payment Microservice`
+  const title = to.meta.titleKey ? i18n.global.t(to.meta.titleKey) : 'Payment'
+  document.title = `${title} — ${i18n.global.t('app.documentTitleSuffix')}`
 })
 
 export default router

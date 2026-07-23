@@ -9,7 +9,7 @@
     </template>
 
     <v-card min-width="320" max-width="360">
-      <v-card-title class="text-subtitle-1">Notificações</v-card-title>
+      <v-card-title class="text-subtitle-1">{{ t('notifications.title') }}</v-card-title>
       <v-divider />
       <v-list v-if="store.notifications.length" density="compact" max-height="320" class="overflow-y-auto">
         <v-list-item
@@ -24,15 +24,17 @@
         </v-list-item>
       </v-list>
       <v-card-text v-else class="text-medium-emphasis text-center py-6">
-        Nenhuma notificação por enquanto
+        {{ t('notifications.empty') }}
       </v-card-text>
     </v-card>
   </v-menu>
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { useNotificationsStore } from '@/stores/notifications'
 
+const { t, locale } = useI18n()
 const store = useNotificationsStore()
 
 function onToggle(open: boolean): void {
@@ -40,6 +42,6 @@ function onToggle(open: boolean): void {
 }
 
 function formatTime(timestamp: string): string {
-  return new Date(timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+  return new Date(timestamp).toLocaleTimeString(locale.value, { hour: '2-digit', minute: '2-digit' })
 }
 </script>

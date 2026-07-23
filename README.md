@@ -72,6 +72,19 @@ pushes the WebSocket update plus (for `PAID`) a confirmation email via SendGrid.
 
 ---
 
+## Internationalization (i18n)
+
+The frontend supports **English, Portuguese, and Spanish** via `vue-i18n`.
+
+- Translation keys live in `frontend/src/locales/{en,pt,es}.json`, mirrored 1:1 across the three files.
+- All view/component templates (`App.vue`, `HomeView`, `ClientsView`, `OrdersView`, `CallbackView`, `NotificationBell`,
+  route titles) render text through `t()`/`$t()` — no hardcoded UI strings.
+- A language switcher (globe icon in the app bar) lets the user change locale at runtime; the choice is persisted to
+  `localStorage` and restored on reload. English is the default when nothing is stored.
+- Locale-sensitive formatting (e.g. notification timestamps) follows the active locale instead of a fixed one.
+
+---
+
 ## Best Practices Followed
 
 - Clear separation between domains, layers, and responsibilities.

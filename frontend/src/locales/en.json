@@ -1,0 +1,145 @@
+{
+  "app": {
+    "name": "Payment App",
+    "gatewayBadge": "API Gateway :8080",
+    "lightMode": "Light Mode",
+    "darkMode": "Dark Mode",
+    "logout": "Logout",
+    "documentTitleSuffix": "Payment Microservice"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "clients": "Clients",
+    "orders": "Orders"
+  },
+  "routeTitles": {
+    "signingIn": "Signing in"
+  },
+  "callback": {
+    "signingIn": "Signing you in…"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "No notifications yet"
+  },
+  "errors": {
+    "unexpected": "An unexpected error occurred",
+    "noPermission": "You do not have permission to access this page"
+  },
+  "validation": {
+    "required": "Required",
+    "invalidEmail": "Invalid email",
+    "cpfLength": "CPF must have 11 digits",
+    "positiveNumber": "Must be greater than 0"
+  },
+  "home": {
+    "overline": "Microservices Platform",
+    "title": "Payment Microservice",
+    "description": "Manage clients and orders through a distributed Spring Boot microservices architecture with Kafka event streaming, gRPC communication, and real-time WebSocket notifications.",
+    "newClient": "New Client",
+    "newOrder": "New Order",
+    "stats": {
+      "clientsLoaded": "Clients Loaded",
+      "ordersViewed": "Orders Viewed",
+      "paidOrders": "Paid Orders",
+      "failedOrders": "Failed Orders"
+    },
+    "servicesArchitecture": "Services Architecture",
+    "orderFlow": "Order Flow",
+    "services": {
+      "apiGateway": { "name": "API Gateway", "description": "Entry point — routes to all services" },
+      "clientService": { "name": "Client Service", "description": "REST API for client management" },
+      "orderService": { "name": "Order Service", "description": "REST API + Kafka consumer for orders" },
+      "paymentService": { "name": "Payment Service", "description": "gRPC server for payment processing" },
+      "notificationService": { "name": "Notification Service", "description": "SendGrid email + WebSocket/STOMP notifications" }
+    },
+    "flowSteps": {
+      "createClient": { "title": "Create Client", "description": "POST /client — registered in client-service" },
+      "placeOrder": { "title": "Place Order", "description": "POST /order — status: PENDING_PAYMENT" },
+      "grpcPayment": { "title": "gRPC Payment", "description": "order-service calls payment-service via gRPC" },
+      "kafkaEvent": { "title": "Kafka Event", "description": "payment-service publishes result to Kafka topic" },
+      "statusUpdated": { "title": "Status Updated", "description": "order-service consumes event → PAID or FAILED" },
+      "emailSent": { "title": "Email Sent", "description": "notification-service sends email via SendGrid" }
+    }
+  },
+  "clients": {
+    "title": "Clients",
+    "subtitle": "Manage your registered clients",
+    "newClient": "New Client",
+    "fetchByUuid": "Fetch client by UUID",
+    "fetchPlaceholder": "e.g. 550e8400-e29b-41d4-a716-446655440000",
+    "search": "Search",
+    "clientsFound": "{count} client(s) found",
+    "noClients": "No clients found. Create the first one.",
+    "editClient": "Edit Client",
+    "newClientDialog": "New Client",
+    "fullName": "Full Name",
+    "email": "Email",
+    "cpf": "CPF",
+    "cpfPlaceholder": "000.000.000-00",
+    "cpfHint": "Brazilian CPF — 11 digits",
+    "cancel": "Cancel",
+    "saveChanges": "Save Changes",
+    "createClient": "Create Client",
+    "table": {
+      "name": "Name",
+      "email": "Email",
+      "cpf": "CPF",
+      "createdAt": "Created At",
+      "actions": "Actions"
+    },
+    "toasts": {
+      "loaded": "Client loaded successfully",
+      "updated": "Client updated successfully",
+      "created": "Client created successfully"
+    }
+  },
+  "orders": {
+    "title": "Orders",
+    "subtitle": "View and manage client orders",
+    "newOrder": "New Order",
+    "selectFromLoaded": "Select from loaded clients",
+    "or": "or",
+    "enterClientUuid": "Enter Client UUID",
+    "enterClientUuidPlaceholder": "550e8400-e29b-41d4-a716-...",
+    "loadOrders": "Load Orders",
+    "viewingOrdersFor": "Viewing orders for: {client}",
+    "ordersFound": "{count} order(s) found",
+    "kafkaHint": "Payment status updates asynchronously via Kafka",
+    "selectClientPrompt": "Select a client above to view their orders.",
+    "noOrdersForClient": "No orders found for this client.",
+    "newOrderDialog": "New Order",
+    "client": "Client",
+    "total": "Total (R$)",
+    "paymentMethod": "Payment Method",
+    "cashDiscount": "10% off",
+    "cashDiscountText": "Cash payment — 10% discount applied by the backend. Final: {total}",
+    "cardText": "Card payment — no discount. Total: {total}",
+    "shippingAddress": "Shipping Address",
+    "notes": "Notes (optional)",
+    "cancel": "Cancel",
+    "placeOrder": "Place Order",
+    "table": {
+      "id": "ID",
+      "total": "Total",
+      "method": "Method",
+      "status": "Status",
+      "shippingAddress": "Shipping Address",
+      "client": "Client"
+    },
+    "status": {
+      "paid": "Paid",
+      "failed": "Failed",
+      "pendingPayment": "Pending Payment"
+    },
+    "paymentMethods": {
+      "card": "Card",
+      "cash": "Cash (10% discount)"
+    },
+    "toasts": {
+      "pleaseSelectClient": "Please select or enter a client ID",
+      "ordersLoaded": "{count} order(s) loaded",
+      "orderPlaced": "Order placed! Payment is processing asynchronously via Kafka."
+    }
+  }
+}

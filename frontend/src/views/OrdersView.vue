@@ -3,8 +3,8 @@
     <!-- Header -->
     <div class="d-flex align-center justify-space-between mb-6">
       <div>
-        <h2 class="text-h5 font-weight-bold">Orders</h2>
-        <div class="text-body-2 text-medium-emphasis">View and manage client orders</div>
+        <h2 class="text-h5 font-weight-bold">{{ t('orders.title') }}</h2>
+        <div class="text-body-2 text-medium-emphasis">{{ t('orders.subtitle') }}</div>
       </div>
       <v-btn
           color="primary"
@@ -13,7 +13,7 @@
           :disabled="!activeClientId"
           @click="openCreate"
       >
-        New Order
+        {{ t('orders.newOrder') }}
       </v-btn>
     </div>
 
@@ -27,7 +27,7 @@
               :items="clientsStore.clients"
               item-title="name"
               item-value="id"
-              label="Select from loaded clients"
+              :label="t('orders.selectFromLoaded')"
               prepend-inner-icon="mdi-account"
               variant="outlined"
               density="compact"
@@ -42,14 +42,14 @@
           </v-select>
         </v-col>
         <v-col cols="12" md="1" class="text-center text-medium-emphasis mb-3 mb-md-0">
-          or
+          {{ t('orders.or') }}
         </v-col>
         <v-col cols="12" md="4" class="pr-md-3 mb-3 mb-md-0">
           <v-text-field
               :disabled="!authStore.isAdmin"
               v-model="manualClientId"
-              label="Enter Client UUID"
-              placeholder="550e8400-e29b-41d4-a716-..."
+              :label="t('orders.enterClientUuid')"
+              :placeholder="t('orders.enterClientUuidPlaceholder')"
               prepend-inner-icon="mdi-identifier"
               variant="outlined"
               density="compact"
@@ -66,7 +66,7 @@
               :loading="store.loading"
               @click="loadOrders"
           >
-            Load Orders
+            {{ t('orders.loadOrders') }}
           </v-btn>
           <v-btn
               v-if="activeClientId"
@@ -80,7 +80,7 @@
       </v-row>
       <div v-if="activeClientId" class="mt-3">
         <v-chip size="small" color="primary" variant="tonal" prepend-icon="mdi-account-check">
-          Viewing orders for: {{ activeClientLabel }}
+          {{ t('orders.viewingOrdersFor', { client: activeClientLabel }) }}
         </v-chip>
       </div>
     </v-card>
@@ -97,7 +97,7 @@
         <template #top>
           <div v-if="store.orders.length > 0" class="d-flex align-center justify-space-between pa-4 pb-0">
             <span class="text-body-2 text-medium-emphasis">
-              {{ store.orders.length }} order(s) found
+              {{ t('orders.ordersFound', { count: store.orders.length }) }}
             </span>
             <v-btn
                 variant="text"
@@ -105,7 +105,7 @@
                 prepend-icon="mdi-information-outline"
                 color="info"
             >
-              Payment status updates asynchronously via Kafka
+              {{ t('orders.kafkaHint') }}
             </v-btn>
           </div>
         </template>
@@ -125,7 +125,7 @@
               variant="tonal"
               :prepend-icon="item.paymentMethod === 'CASH' ? 'mdi-cash' : 'mdi-credit-card'"
           >
-            {{ item.paymentMethod }}
+            {{ paymentMethodLabel(item.paymentMethod) }}
           </v-chip>
         </template>
 
@@ -147,8 +147,8 @@
         <template #no-data>
           <div class="text-center pa-8 text-medium-emphasis">
             <v-icon size="48" class="mb-3">mdi-cart-off</v-icon>
-            <div v-if="!activeClientId">Select a client above to view their orders.</div>
-            <div v-else>No orders found for this client.</div>
+            <div v-if="!activeClientId">{{ t('orders.selectClientPrompt') }}</div>
+            <div v-else>{{ t('orders.noOrdersForClient') }}</div>
           </div>
         </template>
       </v-data-table>
@@ -159,7 +159,7 @@
       <v-card rounded="xl">
         <v-card-title class="pa-5 pb-3">
           <v-icon start color="primary">mdi-cart-plus</v-icon>
-          New Order
+          {{ t('orders.newOrderDialog') }}
         </v-card-title>
         <v-divider/>
         <v-card-text class="pa-5">
@@ -167,7 +167,7 @@
             <!-- Client (readonly) -->
             <v-text-field
                 :model-value="activeClientLabel"
-                label="Client"
+                :label="t('orders.client')"
                 prepend-inner-icon="mdi-account"
                 variant="outlined"
                 density="comfortable"
@@ -178,7 +178,7 @@
             <!-- Total -->
             <v-text-field
                 v-model="form.total"
-                label="Total (R$)"
+                :label="t('orders.total')"
                 :rules="[required, positiveNumber]"
                 prepend-inner-icon="mdi-currency-brl"
                 variant="outlined"
@@ -193,7 +193,7 @@
             <v-select
                 v-model="form.paymentMethod"
                 :items="paymentMethods"
-                label="Payment Method"
+                :label="t('orders.paymentMethod')"
                 :rules="[required]"
                 prepend-inner-icon="mdi-credit-card"
                 variant="outlined"
@@ -204,7 +204,7 @@
                 <v-list-item v-bind="props">
                   <template #append>
                     <v-chip size="x-small" color="success" v-if="item.raw.value === 'CASH'">
-                      10% off
+                      {{ t('orders.cashDiscount') }}
                     </v-chip>
                   </template>
                 </v-list-item>
@@ -221,18 +221,17 @@
                 variant="tonal"
             >
               <span v-if="form.paymentMethod === 'CASH'">
-                Cash payment — 10% discount applied by the backend.
-                Final: <strong>{{ discountedTotal }}</strong>
+                {{ t('orders.cashDiscountText', { total: discountedTotal }) }}
               </span>
               <span v-else>
-                Card payment — no discount. Total: <strong>{{ formatCurrency(Number(form.total)) }}</strong>
+                {{ t('orders.cardText', { total: formatCurrency(Number(form.total)) }) }}
               </span>
             </v-alert>
 
             <!-- Shipping Address -->
             <v-text-field
                 v-model="form.shippingAddress"
-                label="Shipping Address"
+                :label="t('orders.shippingAddress')"
                 :rules="[required]"
                 prepend-inner-icon="mdi-map-marker"
                 variant="outlined"
@@ -243,7 +242,7 @@
             <!-- Notes -->
             <v-textarea
                 v-model="form.notes"
-                label="Notes (optional)"
+                :label="t('orders.notes')"
                 prepend-inner-icon="mdi-note-text"
                 variant="outlined"
                 density="comfortable"
@@ -254,9 +253,9 @@
         </v-card-text>
         <v-card-actions class="pa-5 pt-0">
           <v-spacer/>
-          <v-btn variant="text" rounded="lg" @click="dialog = false">Cancel</v-btn>
+          <v-btn variant="text" rounded="lg" @click="dialog = false">{{ t('orders.cancel') }}</v-btn>
           <v-btn color="primary" rounded="lg" :loading="store.loading" @click="submit">
-            Place Order
+            {{ t('orders.placeOrder') }}
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -267,6 +266,7 @@
 <script setup lang="ts">
 import {computed, onMounted, reactive, ref} from 'vue'
 import {useRoute} from 'vue-router'
+import {useI18n} from 'vue-i18n'
 import {useOrdersStore} from '@/stores/orders'
 import {useClientsStore} from '@/stores/clients'
 import {useAppStore} from '@/stores/app'
@@ -284,6 +284,7 @@ interface FormInstance {
   validate: () => Promise<{ valid: boolean }>
 }
 
+const {t} = useI18n()
 const store = useOrdersStore()
 const clientsStore = useClientsStore()
 const appStore = useAppStore()
@@ -302,19 +303,19 @@ const form = reactive<OrderForm>({
   notes: '',
 })
 
-const paymentMethods = [
-  {title: 'Card', value: 'CARD'},
-  {title: 'Cash (10% discount)', value: 'CASH'},
-]
+const paymentMethods = computed(() => [
+  {title: t('orders.paymentMethods.card'), value: 'CARD'},
+  {title: t('orders.paymentMethods.cash'), value: 'CASH'},
+])
 
-const headers = [
-  {title: 'ID', key: 'id', sortable: false, width: '350px'},
-  {title: 'Total', key: 'total', sortable: true},
-  {title: 'Method', key: 'paymentMethod', sortable: true},
-  {title: 'Status', key: 'status', sortable: true},
-  {title: 'Shipping Address', key: 'shippingAddress', sortable: false},
-  {title: 'Client', key: 'clientName', sortable: true},
-]
+const headers = computed(() => [
+  {title: t('orders.table.id'), key: 'id', sortable: false, width: '350px'},
+  {title: t('orders.table.total'), key: 'total', sortable: true},
+  {title: t('orders.table.method'), key: 'paymentMethod', sortable: true},
+  {title: t('orders.table.status'), key: 'status', sortable: true},
+  {title: t('orders.table.shippingAddress'), key: 'shippingAddress', sortable: false},
+  {title: t('orders.table.client'), key: 'clientName', sortable: true},
+])
 
 const activeClientId = computed(() => store.activeClientId)
 
@@ -329,8 +330,13 @@ const discountedTotal = computed<string>(() => {
   return formatCurrency(val * 0.9)
 })
 
-const required = (v: string): true | string => !!v || 'Required'
-const positiveNumber = (v: string): true | string => parseFloat(v) > 0 || 'Must be greater than 0'
+const required = (v: string): true | string => !!v || t('validation.required')
+const positiveNumber = (v: string): true | string => parseFloat(v) > 0 || t('validation.positiveNumber')
+
+const paymentMethodLabel = (method: string): string => {
+  const map: Record<string, string> = {CARD: t('orders.paymentMethods.card'), CASH: t('orders.paymentMethods.cash')}
+  return map[method] ?? method
+}
 
 const formatCurrency = (value: number | string | null): string => {
   if (value == null || value === '') return '—'
@@ -352,7 +358,11 @@ const statusIcon = (status: OrderStatus | string): string => {
 }
 
 const statusLabel = (status: OrderStatus | string): string => {
-  const map: Record<string, string> = {PAID: 'Paid', FAILED: 'Failed', PENDING_PAYMENT: 'Pending Payment'}
+  const map: Record<string, string> = {
+    PAID: t('orders.status.paid'),
+    FAILED: t('orders.status.failed'),
+    PENDING_PAYMENT: t('orders.status.pendingPayment'),
+  }
   return map[status] ?? status
 }
 
@@ -363,12 +373,12 @@ const onKnownClientSelect = (id: string | null): void => {
 const loadOrders = async (): Promise<void> => {
   const id = selectedKnownClient.value || manualClientId.value.trim()
   if (!id) {
-    appStore.notify('Please select or enter a client ID', 'warning')
+    appStore.notify(t('orders.toasts.pleaseSelectClient'), 'warning')
     return
   }
   try {
     await store.fetchByClient(id)
-    appStore.notify(`${store.orders.length} order(s) loaded`)
+    appStore.notify(t('orders.toasts.ordersLoaded', { count: store.orders.length }))
   } catch (err) {
     appStore.notifyError(err)
   }
@@ -395,7 +405,7 @@ const submit = async (): Promise<void> => {
       notes: form.notes || null,
     }
     await store.create(payload)
-    appStore.notify('Order placed! Payment is processing asynchronously via Kafka.')
+    appStore.notify(t('orders.toasts.orderPlaced'))
     dialog.value = false
   } catch (err) {
     appStore.notifyError(err)

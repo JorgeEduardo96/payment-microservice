@@ -5,18 +5,17 @@
       <div class="hero-bg pa-8">
         <v-row align="center">
           <v-col cols="12" md="8">
-            <div class="text-overline text-medium-emphasis mb-1">Microservices Platform</div>
-            <h1 class="text-h4 font-weight-bold mb-2">Payment Microservice</h1>
+            <div class="text-overline text-medium-emphasis mb-1">{{ t('home.overline') }}</div>
+            <h1 class="text-h4 font-weight-bold mb-2">{{ t('home.title') }}</h1>
             <p class="text-body-1 text-medium-emphasis mb-4">
-              Manage clients and orders through a distributed Spring Boot microservices architecture
-              with Kafka event streaming, gRPC communication, and real-time WebSocket notifications.
+              {{ t('home.description') }}
             </p>
             <v-btn v-if="isAuthenticatedAndAdmin" color="primary" to="/clients" prepend-icon="mdi-account-plus"
                    class="mr-2">
-              New Client
+              {{ t('home.newClient') }}
             </v-btn>
             <v-btn variant="tonal" to="/orders" prepend-icon="mdi-cart-plus">
-              New Order
+              {{ t('home.newOrder') }}
             </v-btn>
           </v-col>
           <v-col cols="12" md="4" class="d-none d-md-flex justify-end">
@@ -32,7 +31,7 @@
         <StatCard
             icon="mdi-account-group"
             icon-color="primary"
-            label="Clients Loaded"
+            :label="t('home.stats.clientsLoaded')"
             :value="clientsStore.clients.length"
             to="/clients"
         />
@@ -41,7 +40,7 @@
         <StatCard
             icon="mdi-cart"
             icon-color="secondary"
-            label="Orders Viewed"
+            :label="t('home.stats.ordersViewed')"
             :value="relevantOrders.length"
             to="/orders"
         />
@@ -50,7 +49,7 @@
         <StatCard
             icon="mdi-check-circle"
             icon-color="success"
-            label="Paid Orders"
+            :label="t('home.stats.paidOrders')"
             :value="paidOrders"
             to="/orders"
         />
@@ -59,7 +58,7 @@
         <StatCard
             icon="mdi-close-circle"
             icon-color="error"
-            label="Failed Orders"
+            :label="t('home.stats.failedOrders')"
             :value="failedOrders"
             to="/orders"
         />
@@ -72,7 +71,7 @@
         <v-card rounded="xl" elevation="0" border height="100%">
           <v-card-title class="pa-5 pb-0">
             <v-icon start color="primary">mdi-server-network</v-icon>
-            Services Architecture
+            {{ t('home.servicesArchitecture') }}
           </v-card-title>
           <v-card-text class="pa-5">
             <v-list density="compact" lines="two">
@@ -99,7 +98,7 @@
         <v-card rounded="xl" elevation="0" border height="100%">
           <v-card-title class="pa-5 pb-0">
             <v-icon start color="secondary">mdi-transit-connection-variant</v-icon>
-            Order Flow
+            {{ t('home.orderFlow') }}
           </v-card-title>
           <v-card-text class="pa-5">
             <v-timeline density="compact" side="end">
@@ -122,6 +121,7 @@
 
 <script setup lang="ts">
 import {computed, onMounted} from 'vue'
+import {useI18n} from 'vue-i18n'
 import {useClientsStore} from '@/stores/clients'
 import {useOrdersStore} from '@/stores/orders'
 import StatCard from '@/components/StatCard.vue'
@@ -141,6 +141,7 @@ interface OrderFlowStep {
   color: string
 }
 
+const {t} = useI18n()
 const clientsStore = useClientsStore()
 const ordersStore = useOrdersStore()
 const authStore = useAuthStore()
@@ -169,52 +170,52 @@ onMounted(async () => {
   }
 })
 
-const services: Service[] = [
+const services = computed<Service[]>(() => [
   {
-    name: 'API Gateway',
-    description: 'Entry point — routes to all services',
+    name: t('home.services.apiGateway.name'),
+    description: t('home.services.apiGateway.description'),
     icon: 'mdi-gate',
     port: 8080,
     color: 'primary'
   },
   {
-    name: 'Client Service',
-    description: 'REST API for client management',
+    name: t('home.services.clientService.name'),
+    description: t('home.services.clientService.description'),
     icon: 'mdi-account-cog',
     port: 8081,
     color: 'secondary'
   },
   {
-    name: 'Order Service',
-    description: 'REST API + Kafka consumer for orders',
+    name: t('home.services.orderService.name'),
+    description: t('home.services.orderService.description'),
     icon: 'mdi-gift',
     port: 8082,
     color: 'info'
   },
   {
-    name: 'Payment Service',
-    description: 'gRPC server for payment processing',
+    name: t('home.services.paymentService.name'),
+    description: t('home.services.paymentService.description'),
     icon: 'mdi-credit-card-settings',
     port: 9090,
     color: 'warning'
   },
   {
-    name: 'Notification Service',
-    description: 'SendGrid email + WebSocket/STOMP notifications',
+    name: t('home.services.notificationService.name'),
+    description: t('home.services.notificationService.description'),
     icon: 'mdi-email-fast',
     port: 8084,
     color: 'success'
   },
-]
+])
 
-const orderFlow: OrderFlowStep[] = [
-  {title: 'Create Client', description: 'POST /client — registered in client-service', color: 'primary'},
-  {title: 'Place Order', description: 'POST /order — status: PENDING_PAYMENT', color: 'secondary'},
-  {title: 'gRPC Payment', description: 'order-service calls payment-service via gRPC', color: 'warning'},
-  {title: 'Kafka Event', description: 'payment-service publishes result to Kafka topic', color: 'info'},
-  {title: 'Status Updated', description: 'order-service consumes event → PAID or FAILED', color: 'success'},
-  {title: 'Email Sent', description: 'notification-service sends email via SendGrid', color: 'success'},
-]
+const orderFlow = computed<OrderFlowStep[]>(() => [
+  {title: t('home.flowSteps.createClient.title'), description: t('home.flowSteps.createClient.description'), color: 'primary'},
+  {title: t('home.flowSteps.placeOrder.title'), description: t('home.flowSteps.placeOrder.description'), color: 'secondary'},
+  {title: t('home.flowSteps.grpcPayment.title'), description: t('home.flowSteps.grpcPayment.description'), color: 'warning'},
+  {title: t('home.flowSteps.kafkaEvent.title'), description: t('home.flowSteps.kafkaEvent.description'), color: 'info'},
+  {title: t('home.flowSteps.statusUpdated.title'), description: t('home.flowSteps.statusUpdated.description'), color: 'success'},
+  {title: t('home.flowSteps.emailSent.title'), description: t('home.flowSteps.emailSent.description'), color: 'success'},
+])
 </script>
 
 <style scoped>

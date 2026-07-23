@@ -1,0 +1,145 @@
+{
+  "app": {
+    "name": "Payment App",
+    "gatewayBadge": "API Gateway :8080",
+    "lightMode": "Modo Claro",
+    "darkMode": "Modo Escuro",
+    "logout": "Sair",
+    "documentTitleSuffix": "Payment Microservice"
+  },
+  "nav": {
+    "dashboard": "Painel",
+    "clients": "Clientes",
+    "orders": "Pedidos"
+  },
+  "routeTitles": {
+    "signingIn": "Entrando"
+  },
+  "callback": {
+    "signingIn": "Entrando…"
+  },
+  "notifications": {
+    "title": "Notificações",
+    "empty": "Nenhuma notificação por enquanto"
+  },
+  "errors": {
+    "unexpected": "Ocorreu um erro inesperado",
+    "noPermission": "Você não tem permissão para acessar esta página"
+  },
+  "validation": {
+    "required": "Obrigatório",
+    "invalidEmail": "E-mail inválido",
+    "cpfLength": "CPF deve ter 11 dígitos",
+    "positiveNumber": "Deve ser maior que 0"
+  },
+  "home": {
+    "overline": "Plataforma de Microsserviços",
+    "title": "Payment Microservice",
+    "description": "Gerencie clientes e pedidos através de uma arquitetura de microsserviços distribuída com Spring Boot, streaming de eventos com Kafka, comunicação via gRPC e notificações em tempo real via WebSocket.",
+    "newClient": "Novo Cliente",
+    "newOrder": "Novo Pedido",
+    "stats": {
+      "clientsLoaded": "Clientes Carregados",
+      "ordersViewed": "Pedidos Visualizados",
+      "paidOrders": "Pedidos Pagos",
+      "failedOrders": "Pedidos com Falha"
+    },
+    "servicesArchitecture": "Arquitetura de Serviços",
+    "orderFlow": "Fluxo do Pedido",
+    "services": {
+      "apiGateway": { "name": "API Gateway", "description": "Ponto de entrada — roteia para todos os serviços" },
+      "clientService": { "name": "Client Service", "description": "API REST para gerenciamento de clientes" },
+      "orderService": { "name": "Order Service", "description": "API REST + consumidor Kafka para pedidos" },
+      "paymentService": { "name": "Payment Service", "description": "Servidor gRPC para processamento de pagamentos" },
+      "notificationService": { "name": "Notification Service", "description": "E-mail via SendGrid + notificações WebSocket/STOMP" }
+    },
+    "flowSteps": {
+      "createClient": { "title": "Criar Cliente", "description": "POST /client — registrado no client-service" },
+      "placeOrder": { "title": "Fazer Pedido", "description": "POST /order — status: PENDING_PAYMENT" },
+      "grpcPayment": { "title": "Pagamento gRPC", "description": "order-service chama payment-service via gRPC" },
+      "kafkaEvent": { "title": "Evento Kafka", "description": "payment-service publica o resultado no tópico Kafka" },
+      "statusUpdated": { "title": "Status Atualizado", "description": "order-service consome o evento → PAID ou FAILED" },
+      "emailSent": { "title": "E-mail Enviado", "description": "notification-service envia e-mail via SendGrid" }
+    }
+  },
+  "clients": {
+    "title": "Clientes",
+    "subtitle": "Gerencie seus clientes cadastrados",
+    "newClient": "Novo Cliente",
+    "fetchByUuid": "Buscar cliente por UUID",
+    "fetchPlaceholder": "ex: 550e8400-e29b-41d4-a716-446655440000",
+    "search": "Buscar",
+    "clientsFound": "{count} cliente(s) encontrado(s)",
+    "noClients": "Nenhum cliente encontrado. Crie o primeiro.",
+    "editClient": "Editar Cliente",
+    "newClientDialog": "Novo Cliente",
+    "fullName": "Nome Completo",
+    "email": "E-mail",
+    "cpf": "CPF",
+    "cpfPlaceholder": "000.000.000-00",
+    "cpfHint": "CPF — 11 dígitos",
+    "cancel": "Cancelar",
+    "saveChanges": "Salvar Alterações",
+    "createClient": "Criar Cliente",
+    "table": {
+      "name": "Nome",
+      "email": "E-mail",
+      "cpf": "CPF",
+      "createdAt": "Criado em",
+      "actions": "Ações"
+    },
+    "toasts": {
+      "loaded": "Cliente carregado com sucesso",
+      "updated": "Cliente atualizado com sucesso",
+      "created": "Cliente criado com sucesso"
+    }
+  },
+  "orders": {
+    "title": "Pedidos",
+    "subtitle": "Visualize e gerencie os pedidos dos clientes",
+    "newOrder": "Novo Pedido",
+    "selectFromLoaded": "Selecionar entre os clientes carregados",
+    "or": "ou",
+    "enterClientUuid": "Informe o UUID do Cliente",
+    "enterClientUuidPlaceholder": "550e8400-e29b-41d4-a716-...",
+    "loadOrders": "Carregar Pedidos",
+    "viewingOrdersFor": "Visualizando pedidos de: {client}",
+    "ordersFound": "{count} pedido(s) encontrado(s)",
+    "kafkaHint": "O status do pagamento é atualizado de forma assíncrona via Kafka",
+    "selectClientPrompt": "Selecione um cliente acima para ver seus pedidos.",
+    "noOrdersForClient": "Nenhum pedido encontrado para este cliente.",
+    "newOrderDialog": "Novo Pedido",
+    "client": "Cliente",
+    "total": "Total (R$)",
+    "paymentMethod": "Forma de Pagamento",
+    "cashDiscount": "10% de desconto",
+    "cashDiscountText": "Pagamento à vista — 10% de desconto aplicado pelo backend. Total final: {total}",
+    "cardText": "Pagamento no cartão — sem desconto. Total: {total}",
+    "shippingAddress": "Endereço de Entrega",
+    "notes": "Observações (opcional)",
+    "cancel": "Cancelar",
+    "placeOrder": "Finalizar Pedido",
+    "table": {
+      "id": "ID",
+      "total": "Total",
+      "method": "Forma",
+      "status": "Status",
+      "shippingAddress": "Endereço de Entrega",
+      "client": "Cliente"
+    },
+    "status": {
+      "paid": "Pago",
+      "failed": "Falhou",
+      "pendingPayment": "Pagamento Pendente"
+    },
+    "paymentMethods": {
+      "card": "Cartão",
+      "cash": "Dinheiro (10% de desconto)"
+    },
+    "toasts": {
+      "pleaseSelectClient": "Selecione ou informe um ID de cliente",
+      "ordersLoaded": "{count} pedido(s) carregado(s)",
+      "orderPlaced": "Pedido realizado! O pagamento está sendo processado de forma assíncrona via Kafka."
+    }
+  }
+}

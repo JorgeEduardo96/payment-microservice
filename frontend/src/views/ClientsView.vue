@@ -3,11 +3,11 @@
     <!-- Header -->
     <div class="d-flex align-center justify-space-between mb-6">
       <div>
-        <h2 class="text-h5 font-weight-bold">Clients</h2>
-        <div class="text-body-2 text-medium-emphasis">Manage your registered clients</div>
+        <h2 class="text-h5 font-weight-bold">{{ t('clients.title') }}</h2>
+        <div class="text-body-2 text-medium-emphasis">{{ t('clients.subtitle') }}</div>
       </div>
       <v-btn color="primary" prepend-icon="mdi-account-plus" rounded="lg" @click="openCreate">
-        New Client
+        {{ t('clients.newClient') }}
       </v-btn>
     </div>
 
@@ -17,8 +17,8 @@
         <v-col>
           <v-text-field
             v-model="searchId"
-            label="Fetch client by UUID"
-            placeholder="e.g. 550e8400-e29b-41d4-a716-446655440000"
+            :label="t('clients.fetchByUuid')"
+            :placeholder="t('clients.fetchPlaceholder')"
             prepend-inner-icon="mdi-identifier"
             variant="outlined"
             density="compact"
@@ -35,7 +35,7 @@
             :loading="store.loading"
             @click="searchClient"
           >
-            Search
+            {{ t('clients.search') }}
           </v-btn>
         </v-col>
       </v-row>
@@ -53,7 +53,7 @@
         <template #top>
           <div class="d-flex align-center justify-space-between pa-4 pb-0">
             <span class="text-body-2 text-medium-emphasis">
-              {{ store.clients.length }} client(s) found
+              {{ t('clients.clientsFound', { count: store.clients.length }) }}
             </span>
             <v-btn
               icon="mdi-refresh"
@@ -93,7 +93,7 @@
         <template #no-data>
           <div class="text-center pa-8 text-medium-emphasis">
             <v-icon size="48" class="mb-3">mdi-account-off</v-icon>
-            <div>No clients found. Create the first one.</div>
+            <div>{{ t('clients.noClients') }}</div>
           </div>
         </template>
       </v-data-table>
@@ -106,14 +106,14 @@
           <v-icon start :color="isEditing ? 'primary' : 'success'">
             {{ isEditing ? 'mdi-account-edit' : 'mdi-account-plus' }}
           </v-icon>
-          {{ isEditing ? 'Edit Client' : 'New Client' }}
+          {{ isEditing ? t('clients.editClient') : t('clients.newClientDialog') }}
         </v-card-title>
         <v-divider />
         <v-card-text class="pa-5">
           <v-form ref="formRef" @submit.prevent="submit">
             <v-text-field
               v-model="form.name"
-              label="Full Name"
+              :label="t('clients.fullName')"
               :rules="[required]"
               prepend-inner-icon="mdi-account"
               variant="outlined"
@@ -122,7 +122,7 @@
             />
             <v-text-field
               v-model="form.email"
-              label="Email"
+              :label="t('clients.email')"
               :rules="[required, validEmail]"
               prepend-inner-icon="mdi-email"
               variant="outlined"
@@ -133,27 +133,27 @@
             <v-text-field
               v-if="!isEditing"
               v-model="form.cpf"
-              label="CPF"
+              :label="t('clients.cpf')"
               :rules="[required, validCpf]"
               prepend-inner-icon="mdi-card-account-details"
               variant="outlined"
               density="comfortable"
-              placeholder="000.000.000-00"
-              hint="Brazilian CPF — 11 digits"
+              :placeholder="t('clients.cpfPlaceholder')"
+              :hint="t('clients.cpfHint')"
               persistent-hint
             />
           </v-form>
         </v-card-text>
         <v-card-actions class="pa-5 pt-0">
           <v-spacer />
-          <v-btn variant="text" rounded="lg" @click="dialog = false">Cancel</v-btn>
+          <v-btn variant="text" rounded="lg" @click="dialog = false">{{ t('clients.cancel') }}</v-btn>
           <v-btn
             color="primary"
             rounded="lg"
             :loading="store.loading"
             @click="submit"
           >
-            {{ isEditing ? 'Save Changes' : 'Create Client' }}
+            {{ isEditing ? t('clients.saveChanges') : t('clients.createClient') }}
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -162,8 +162,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useClientsStore } from '@/stores/clients'
 import { useAppStore } from '@/stores/app'
 import type { Client } from '@/types'
@@ -178,6 +179,7 @@ interface FormInstance {
   validate: () => Promise<{ valid: boolean }>
 }
 
+const { t } = useI18n()
 const store = useClientsStore()
 const appStore = useAppStore()
 const router = useRouter()
@@ -190,19 +192,19 @@ const formRef = ref<FormInstance | null>(null)
 
 const form = reactive<ClientForm>({ name: '', email: '', cpf: '' })
 
-const headers = [
-  { title: 'Name', key: 'name', sortable: true },
-  { title: 'Email', key: 'email', sortable: true },
-  { title: 'CPF', key: 'cpf', sortable: false },
-  { title: 'Created At', key: 'createdAt', sortable: true },
-  { title: 'Actions', key: 'actions', sortable: false, align: 'end' as const },
-]
+const headers = computed(() => [
+  { title: t('clients.table.name'), key: 'name', sortable: true },
+  { title: t('clients.table.email'), key: 'email', sortable: true },
+  { title: t('clients.table.cpf'), key: 'cpf', sortable: false },
+  { title: t('clients.table.createdAt'), key: 'createdAt', sortable: true },
+  { title: t('clients.table.actions'), key: 'actions', sortable: false, align: 'end' as const },
+])
 
-const required = (v: string): true | string => !!v || 'Required'
-const validEmail = (v: string): true | string => /.+@.+\..+/.test(v) || 'Invalid email'
+const required = (v: string): true | string => !!v || t('validation.required')
+const validEmail = (v: string): true | string => /.+@.+\..+/.test(v) || t('validation.invalidEmail')
 const validCpf = (v: string): true | string => {
   const digits = (v || '').replace(/\D/g, '')
-  return digits.length === 11 || 'CPF must have 11 digits'
+  return digits.length === 11 || t('validation.cpfLength')
 }
 
 const formatCpf = (cpf: string): string => {
@@ -221,7 +223,7 @@ const searchClient = async (): Promise<void> => {
   if (!searchId.value.trim()) return
   try {
     await store.fetchById(searchId.value.trim())
-    appStore.notify('Client loaded successfully')
+    appStore.notify(t('clients.toasts.loaded'))
     searchId.value = ''
   } catch (err) {
     appStore.notifyError(err)
@@ -253,10 +255,10 @@ const submit = async (): Promise<void> => {
   try {
     if (isEditing.value) {
       await store.update(editingId.value!, { name: form.name, email: form.email })
-      appStore.notify('Client updated successfully')
+      appStore.notify(t('clients.toasts.updated'))
     } else {
       await store.create({ name: form.name, email: form.email, cpf: form.cpf.replace(/\D/g, '') })
-      appStore.notify('Client created successfully', 'success')
+      appStore.notify(t('clients.toasts.created'), 'success')
     }
     dialog.value = false
   } catch (err) {

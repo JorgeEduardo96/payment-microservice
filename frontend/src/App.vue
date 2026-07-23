@@ -4,7 +4,7 @@
     <v-navigation-drawer v-model="drawer" :rail="rail" permanent color="surface">
       <v-list-item
           prepend-icon="mdi-cash-multiple"
-          title="Payment App"
+          :title="t('app.name')"
           nav
           class="py-4"
       >
@@ -39,7 +39,7 @@
         <v-list density="compact" nav class="my-1">
           <v-list-item
               :prepend-icon="theme === 'dark' ? 'mdi-weather-sunny' : 'mdi-weather-night'"
-              :title="theme === 'dark' ? 'Light Mode' : 'Dark Mode'"
+              :title="theme === 'dark' ? t('app.lightMode') : t('app.darkMode')"
               rounded="lg"
               @click="toggleTheme"
           />
@@ -56,8 +56,24 @@
       <template #append>
         <v-chip color="success" size="small" variant="tonal" class="mr-4">
           <v-icon start size="8">mdi-circle</v-icon>
-          API Gateway :8080
+          {{ t('app.gatewayBadge') }}
         </v-chip>
+        <v-menu>
+          <template #activator="{ props }">
+            <v-btn icon variant="text" v-bind="props" class="mr-2">
+              <v-icon>mdi-translate</v-icon>
+            </v-btn>
+          </template>
+          <v-list density="compact">
+            <v-list-item
+                v-for="loc in SUPPORTED_LOCALES"
+                :key="loc"
+                :title="localeLabels[loc]"
+                :active="locale === loc"
+                @click="setLocale(loc)"
+            />
+          </v-list>
+        </v-menu>
         <NotificationBell class="mr-2"/>
         <v-menu v-if="authStore.isAuthenticated">
           <template #activator="{ props }">
@@ -66,7 +82,7 @@
             </v-btn>
           </template>
           <v-list>
-            <v-list-item prepend-icon="mdi-logout" title="Logout" @click="authStore.logout()"/>
+            <v-list-item prepend-icon="mdi-logout" :title="t('app.logout')" @click="authStore.logout()"/>
           </v-list>
         </v-menu>
       </template>
@@ -101,10 +117,13 @@
 <script setup lang="ts">
 import {computed, onUnmounted, ref, watch} from 'vue'
 import {useRoute} from 'vue-router'
+import {useI18n} from 'vue-i18n'
 import {useAppStore} from '@/stores/app'
 import {useAuthStore} from '@/stores/auth'
 import {useNotificationsStore} from '@/stores/notifications'
 import NotificationBell from '@/components/NotificationBell.vue'
+import {SUPPORTED_LOCALES, setLocale} from '@/plugins/i18n'
+import type {SupportedLocale} from '@/plugins/i18n'
 
 const drawer = ref(true)
 const rail = ref(false)
@@ -113,6 +132,13 @@ const route = useRoute()
 const appStore = useAppStore()
 const authStore = useAuthStore()
 const notificationsStore = useNotificationsStore()
+const {t, locale} = useI18n()
+
+const localeLabels: Record<SupportedLocale, string> = {
+  en: 'English',
+  pt: 'Português',
+  es: 'Español',
+}
 
 watch(
     () => authStore.isAdmin || authStore.isClient,
@@ -125,17 +151,18 @@ watch(
 onUnmounted(() => notificationsStore.disconnect())
 
 const navItems = computed(() => [
-  {title: 'Dashboard', icon: 'mdi-view-dashboard-outline', to: '/'},
-  ...(authStore.isAdmin ? [{title: 'Clients', icon: 'mdi-account-group-outline', to: '/clients'}] : []),
-  {title: 'Orders', icon: 'mdi-cart-outline', to: '/orders'},
+  {title: t('nav.dashboard'), icon: 'mdi-view-dashboard-outline', to: '/'},
+  ...(authStore.isAdmin ? [{title: t('nav.clients'), icon: 'mdi-account-group-outline', to: '/clients'}] : []),
+  {title: t('nav.orders'), icon: 'mdi-cart-outline', to: '/orders'},
 ])
 
 const breadcrumbs = computed(() => {
   const routeName = route.name?.toString() ?? ''
-  if (routeName === 'home') return [{title: 'Dashboard', disabled: true}]
+  if (routeName === 'home') return [{title: t('nav.dashboard'), disabled: true}]
+  const titleKey = route.meta.titleKey
   return [
-    {title: 'Dashboard', to: '/', disabled: false},
-    {title: routeName.charAt(0).toUpperCase() + routeName.slice(1), disabled: true},
+    {title: t('nav.dashboard'), to: '/', disabled: false},
+    {title: titleKey ? t(titleKey) : routeName, disabled: true},
   ]
 })
 

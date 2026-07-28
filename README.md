@@ -221,6 +221,14 @@ The E2E tests account for this by waiting for the Kafka event to be consumed bef
 > Like `e2e-tests`, this module is excluded from `./gradlew build` and runs as a dedicated CI step,
 > after the Docker images are built.
 
+**Watching the tests run (`-Dheadless=false`) on Windows:** Playwright's bundled Chromium requires
+the Microsoft Visual C++ Redistributable (x64) to launch on Windows; without it, the browser fails
+to start with a "side-by-side configuration" error. `BaseBrowserE2ETest` detects Windows and falls
+back to launching the system's installed Microsoft Edge instead (`channel: "msedge"`, same Chromium
+engine underneath) so the suite works out of the box — you'll see an Edge window, not Chromium.
+Installing the VC++ Redistributable lets Playwright's own Chromium run instead, if preferred.
+CI (Linux) always uses the bundled Chromium.
+
 ### Frontend Tests
 
 - Location: `frontend/src/**/__test__`

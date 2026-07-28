@@ -43,11 +43,13 @@ class OrderPaymentFlowE2ETest extends BaseBrowserE2ETest {
             // order-service updates the status asynchronously — payment-service simulates a ~3s
             // processing delay, then publishes to Kafka, and the row must flip away from
             // "Pending Payment" to a final status WITHOUT a manual refresh, driven purely by the
-            // WebSocket push handled in the notifications store.
+            // WebSocket push handled in the notifications store. Generous timeout: notification-service's
+            // consumer group has only just started, and its first-ever partition assignment can
+            // occasionally take well past 30s to rebalance before this message is even delivered.
             Locator statusCell = clientPage.locator("table tbody tr").first().locator("td").nth(3);
             assertThat(statusCell).not().containsText(
                     "Pending Payment",
-                    new LocatorAssertions.ContainsTextOptions().setTimeout(30_000));
+                    new LocatorAssertions.ContainsTextOptions().setTimeout(45_000));
 
             boolean paid = statusCell.textContent().contains("Paid");
             String expectedNotificationTitle = paid ? "Payment confirmed" : "Payment failed";

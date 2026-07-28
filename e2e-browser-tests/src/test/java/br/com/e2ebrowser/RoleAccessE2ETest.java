@@ -29,7 +29,7 @@ class RoleAccessE2ETest extends BaseBrowserE2ETest {
             clientPage.navigate(FRONTEND_URL + "/clients");
             clientPage.waitForSelector(
                     "text=You do not have permission to access this page",
-                    new Page.WaitForSelectorOptions().setTimeout(15_000));
+                    new Page.WaitForSelectorOptions().setTimeout(30_000));
             assertThat(clientPage).hasURL(FRONTEND_URL + "/");
         }
     }

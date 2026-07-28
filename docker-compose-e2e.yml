@@ -137,6 +137,15 @@ services:
     networks:
       - e2e-network
 
+  frontend:
+    image: jorgeeduardo96/payment-microservice-frontend:latest
+    ports:
+      - "8000:80"
+    depends_on:
+      - api-gateway
+    networks:
+      - e2e-network
+
 networks:
   e2e-network:
     driver: bridge

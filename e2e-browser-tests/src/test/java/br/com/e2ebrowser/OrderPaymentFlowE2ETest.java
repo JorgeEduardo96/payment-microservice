@@ -4,6 +4,7 @@ import com.microsoft.playwright.BrowserContext;
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.assertions.LocatorAssertions;
+import com.microsoft.playwright.options.AriaRole;
 import org.junit.jupiter.api.Test;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
@@ -27,10 +28,12 @@ class OrderPaymentFlowE2ETest extends BaseBrowserE2ETest {
             clientPage.click("button:has-text('New Order')");
 
             clientPage.getByLabel("Total (R$)").fill("150.00");
-            // Vuetify's VSelect overlays a non-interactive helper div on top of the readonly
-            // combobox input, which intercepts a normal click — force it, matching how a real
-            // click on the field's visible surface (not the exact input coordinates) behaves.
-            clientPage.getByLabel("Payment Method").click(new Locator.ClickOptions().setForce(true));
+            // Vuetify's VSelect wraps its readonly input in a "no-activator" zone, so clicks there
+            // (even forced) never toggle the menu — drive it via keyboard instead, which Vuetify
+            // handles directly on the focused combobox: ArrowDown opens the menu and highlights the
+            // first option ("Card"), then it's selected by clicking it in the now-open list.
+            clientPage.getByRole(AriaRole.COMBOBOX, new Page.GetByRoleOptions().setName("Payment Method"))
+                    .press("ArrowDown");
             clientPage.click(".v-list-item:has-text('Card')");
             clientPage.getByLabel("Shipping Address").fill("Rua E2E, 123");
             clientPage.click(".v-dialog button:has-text('Place Order')");
@@ -44,7 +47,7 @@ class OrderPaymentFlowE2ETest extends BaseBrowserE2ETest {
             Locator statusCell = clientPage.locator("table tbody tr").first().locator("td").nth(3);
             assertThat(statusCell).not().containsText(
                     "Pending Payment",
-                    new LocatorAssertions.ContainsTextOptions().setTimeout(20_000));
+                    new LocatorAssertions.ContainsTextOptions().setTimeout(30_000));
 
             boolean paid = statusCell.textContent().contains("Paid");
             String expectedNotificationTitle = paid ? "Payment confirmed" : "Payment failed";

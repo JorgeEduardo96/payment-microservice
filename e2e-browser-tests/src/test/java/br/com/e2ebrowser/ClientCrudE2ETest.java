@@ -1,6 +1,5 @@
 package br.com.e2ebrowser;
 
-import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import org.junit.jupiter.api.Test;
 
@@ -44,7 +43,6 @@ class ClientCrudE2ETest extends BaseBrowserE2ETest {
 
         page.getByLabel("Full Name").fill(updatedName);
         page.click(".v-dialog button:has-text('Save Changes')");
-        page.screenshot(new Page.ScreenshotOptions().setPath(java.nio.file.Paths.get("build/debug-after-save-click.png")));
 
         assertThat(page.locator("text=Client updated successfully")).isVisible();
         assertThat(page.locator("table")).containsText(updatedName);

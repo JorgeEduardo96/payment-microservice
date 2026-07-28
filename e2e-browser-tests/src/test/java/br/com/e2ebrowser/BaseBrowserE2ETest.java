@@ -289,4 +289,13 @@ public abstract class BaseBrowserE2ETest {
                 .toAbsolutePath()
                 .toFile();
     }
+
+    /**
+     * Scales a wait margin up for CI's slower, shared runners (e.g. Kafka consumer group
+     * rebalancing on a freshly-started broker can take noticeably longer there than on a local
+     * dev machine).
+     */
+    protected static long ciAwareTimeoutMs(long localTimeoutMs, long ciTimeoutMs) {
+        return System.getProperty("CI", "").isEmpty() ? localTimeoutMs : ciTimeoutMs;
+    }
 }

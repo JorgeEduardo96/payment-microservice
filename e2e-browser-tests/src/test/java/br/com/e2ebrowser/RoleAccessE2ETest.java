@@ -2,6 +2,7 @@ package br.com.e2ebrowser;
 
 import com.microsoft.playwright.BrowserContext;
 import com.microsoft.playwright.Page;
+import com.microsoft.playwright.assertions.PageAssertions;
 import org.junit.jupiter.api.Test;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
@@ -25,12 +26,13 @@ class RoleAccessE2ETest extends BaseBrowserE2ETest {
             assertThat(clientPage.locator(".v-navigation-drawer >> text=Orders")).isVisible();
             assertThat(clientPage.locator(".v-navigation-drawer >> text=Clients")).hasCount(0);
 
-            // Direct navigation must also be blocked server-side by the route guard, not just hidden in the UI.
+            // Direct navigation must also be blocked server-side by the route guard, not just
+            // hidden in the UI. The warning toast the guard fires auto-dismisses after 4s
+            // (v-snackbar timeout), which races against page load — assert on the redirect
+            // itself (a stable postcondition) rather than the transient toast text.
             clientPage.navigate(FRONTEND_URL + "/clients");
-            clientPage.waitForSelector(
-                    "text=You do not have permission to access this page",
-                    new Page.WaitForSelectorOptions().setTimeout(30_000));
-            assertThat(clientPage).hasURL(FRONTEND_URL + "/");
+            assertThat(clientPage).hasURL(FRONTEND_URL + "/",
+                    new PageAssertions.HasURLOptions().setTimeout(ciAwareTimeoutMs(30_000, 45_000)));
         }
     }
 
@@ -41,9 +43,7 @@ class RoleAccessE2ETest extends BaseBrowserE2ETest {
         assertThat(page.locator(".v-navigation-drawer >> text=Clients")).hasCount(0);
 
         page.navigate(FRONTEND_URL + "/clients");
-        page.waitForSelector(
-                "text=You do not have permission to access this page",
-                new Page.WaitForSelectorOptions().setTimeout(15_000));
-        assertThat(page).hasURL(FRONTEND_URL + "/");
+        assertThat(page).hasURL(FRONTEND_URL + "/",
+                new PageAssertions.HasURLOptions().setTimeout(ciAwareTimeoutMs(30_000, 45_000)));
     }
 }

@@ -6,6 +6,7 @@ import br.com.clientservice.domain.dto.ClientUpdateInputDTO;
 import br.com.clientservice.domain.event.ClientCreatedEvent;
 import br.com.clientservice.domain.event.ClientUpdatedEvent;
 import br.com.clientservice.domain.repository.ClientRepository;
+import br.com.sharedlib.model.BusinessException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -16,6 +17,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -55,6 +57,8 @@ class ClientServiceTest {
         ClientUpdateInputDTO mockInputDTO = mock(ClientUpdateInputDTO.class);
         ClientOutputDTO actualResult = mock(ClientOutputDTO.class);
 
+        when(mockInputDTO.email()).thenReturn("new-email@example.com");
+        when(clientRepository.findByEmail("new-email@example.com")).thenReturn(null);
         when(clientRepository.update(clientId, mockInputDTO)).thenReturn(actualResult);
         when(actualResult.id()).thenReturn(clientId);
 
@@ -64,6 +68,41 @@ class ClientServiceTest {
         verify(clientRepository).update(clientId, mockInputDTO);
 
         assertThat(expectedResult).isEqualTo(actualResult);
+    }
+
+    @Test
+    void updateKeepingTheSameEmailIsAllowed() {
+        UUID clientId = UUID.randomUUID();
+        ClientUpdateInputDTO mockInputDTO = mock(ClientUpdateInputDTO.class);
+        ClientOutputDTO actualResult = mock(ClientOutputDTO.class);
+        ClientOutputDTO sameClient = mock(ClientOutputDTO.class);
+
+        when(mockInputDTO.email()).thenReturn("client@example.com");
+        when(sameClient.id()).thenReturn(clientId);
+        when(clientRepository.findByEmail("client@example.com")).thenReturn(sameClient);
+        when(clientRepository.update(clientId, mockInputDTO)).thenReturn(actualResult);
+
+        ClientOutputDTO expectedResult = underTest.update(clientId, mockInputDTO);
+
+        verify(clientRepository).update(clientId, mockInputDTO);
+        assertThat(expectedResult).isEqualTo(actualResult);
+    }
+
+    @Test
+    void updateRejectsAnEmailAlreadyUsedByAnotherClient() {
+        UUID clientId = UUID.randomUUID();
+        ClientUpdateInputDTO mockInputDTO = mock(ClientUpdateInputDTO.class);
+        ClientOutputDTO anotherClient = mock(ClientOutputDTO.class);
+
+        when(mockInputDTO.email()).thenReturn("taken@example.com");
+        when(anotherClient.id()).thenReturn(UUID.randomUUID());
+        when(clientRepository.findByEmail("taken@example.com")).thenReturn(anotherClient);
+
+        assertThatThrownBy(() -> underTest.update(clientId, mockInputDTO))
+                .isInstanceOf(BusinessException.class);
+
+        verify(clientRepository, never()).update(any(), any());
+        verify(applicationEventPublisher, never()).publishEvent(any());
     }
 
     @Test

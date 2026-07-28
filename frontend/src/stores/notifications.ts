@@ -20,6 +20,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
     const authStore = useAuthStore();
 
     let stompClient: Client | null = null
+    let connecting = false
 
     const hasUnread = computed(() => unreadCount.value > 0)
 
@@ -37,36 +38,47 @@ export const useNotificationsStore = defineStore('notifications', () => {
     }
 
     async function connect(): Promise<void> {
-        if (stompClient) return
+        // Guards against a stompClient built by a previous call, AND against a second call
+        // racing in through the same async gap below (e.g. the App.vue watcher can fire twice
+        // in quick succession right after login, since oidc-client-ts's own "user loaded" event
+        // sets the auth store's user a second time after handleCallback already set it). Without
+        // this flag, both calls pass the `stompClient` check before either has assigned it,
+        // leaving two live STOMP connections/subscriptions for the same session.
+        if (stompClient || connecting) return
+        connecting = true
 
-        const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
-        const user = await userManager.getUser()
+        try {
+            const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
+            const user = await userManager.getUser()
 
-        stompClient = new Client({
-            brokerURL: `${protocol}://${window.location.host}/ws-notifications`,
-            connectHeaders: user?.access_token ? { Authorization: `Bearer ${user.access_token}` } : {},
-            reconnectDelay: 5000,
-            onConnect: () => {
-                connected.value = true
+            stompClient = new Client({
+                brokerURL: `${protocol}://${window.location.host}/ws-notifications`,
+                connectHeaders: user?.access_token ? { Authorization: `Bearer ${user.access_token}` } : {},
+                reconnectDelay: 5000,
+                onConnect: () => {
+                    connected.value = true
 
-                if (authStore.isAdmin) {
-                    stompClient?.subscribe(BROADCAST_DESTINATION, (frame) => {
-                        handleNotification(JSON.parse(frame.body) as NotificationMessage)
-                    })
-                }
+                    if (authStore.isAdmin) {
+                        stompClient?.subscribe(BROADCAST_DESTINATION, (frame) => {
+                            handleNotification(JSON.parse(frame.body) as NotificationMessage)
+                        })
+                    }
 
-                if (authStore.isClient) {
-                    stompClient?.subscribe(USER_DESTINATION, (frame) => {
-                        handleNotification(JSON.parse(frame.body) as NotificationMessage)
-                    })
-                }
-            },
-            onDisconnect: () => {
-                connected.value = false
-            },
-        })
+                    if (authStore.isClient) {
+                        stompClient?.subscribe(USER_DESTINATION, (frame) => {
+                            handleNotification(JSON.parse(frame.body) as NotificationMessage)
+                        })
+                    }
+                },
+                onDisconnect: () => {
+                    connected.value = false
+                },
+            })
 
-        stompClient.activate()
+            stompClient.activate()
+        } finally {
+            connecting = false
+        }
     }
 
     function disconnect(): void {

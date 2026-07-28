@@ -1,0 +1,67 @@
+plugins {
+    id 'java'
+}
+
+group = 'br.com.e2ebrowser'
+version = '0.0.1-SNAPSHOT'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.3'
+    testImplementation 'com.microsoft.playwright:playwright:1.47.0'
+
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+// Downloads the Playwright browser binaries (Chromium) required to run these tests.
+// On CI (where the CI env var is set by GitHub Actions), also installs the OS-level
+// shared libraries Chromium needs via --with-deps; that flag requires sudo/apt and only
+// applies to Linux runners, so it's skipped for local development on other platforms.
+tasks.register('installPlaywrightBrowsers', JavaExec) {
+    group = 'verification'
+    description = 'Downloads the Playwright Chromium browser (and OS deps on CI).'
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.microsoft.playwright.CLI'
+    args = System.getenv('CI') ? ['install', '--with-deps', 'chromium'] : ['install', 'chromium']
+    // GitHub Actions' ubuntu-latest runner sometimes moves to a newer Ubuntu release before
+    // Playwright's own host-dependency validator recognizes its (renamed) package names, which
+    // makes it report missing libraries that --with-deps actually already installed via apt.
+    // This is Playwright's own documented escape hatch for that false positive.
+    if (System.getenv('CI')) {
+        environment 'PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS', 'true'
+    }
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+    dependsOn installPlaywrightBrowsers
+    if (System.getenv('CI')) {
+        environment 'PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS', 'true'
+    }
+
+    // Headless by default (required on CI). Run locally with the browser visible via:
+    // ./gradlew :e2e-browser-tests:test -Dheadless=false
+    systemProperty 'headless', System.getProperty('headless', 'true')
+
+    // Forwarded so tests can use longer wait margins on CI's slower, shared runners.
+    systemProperty 'CI', System.getenv('CI') ?: ''
+
+    // Browser E2E tests require Docker and locally available images, plus the frontend
+    // container serving the app at http://localhost:8000.
+    // Execute them explicitly with: ./gradlew :e2e-browser-tests:test
+    // To skip in normal builds: ./gradlew build -x :e2e-browser-tests:test
+}
+
+// The 'java' plugin adds 'test' as a dependency of 'check' automatically.
+// We remove this dependency so that ./gradlew build does not run the browser E2E tests.
+// The tests are executed explicitly in CI as a separate step.
+afterEvaluate {
+    tasks.named('check').configure {
+        setDependsOn([])
+    }
+}

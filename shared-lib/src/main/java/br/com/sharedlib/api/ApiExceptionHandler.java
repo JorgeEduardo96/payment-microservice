@@ -1,5 +1,6 @@
 package br.com.sharedlib.api;
 
+import br.com.sharedlib.model.BusinessException;
 import br.com.sharedlib.model.EntityNotFoundException;
 import br.com.sharedlib.model.Problem;
 import br.com.sharedlib.model.ProblemType;
@@ -76,6 +77,16 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         logger.warning("Entity not found: " + ex.getMessage());
         var status = HttpStatus.NOT_FOUND;
         Problem problem = createProblemBuilder(status, ex.getMessage(), ProblemType.RESOURCE_NOT_FOUND).build();
+        return handleExceptionInternal(ex, problem, new HttpHeaders(), status, webRequest);
+    }
+
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<Object> handleBusinessException(BusinessException ex, WebRequest webRequest) {
+        logger.warning("Business rule violation: " + ex.getMessage());
+        var status = HttpStatus.CONFLICT;
+        Problem problem = createProblemBuilder(status, ex.getMessage(), ProblemType.BUSINESS_ERROR)
+                .userMessage(ex.getMessage())
+                .build();
         return handleExceptionInternal(ex, problem, new HttpHeaders(), status, webRequest);
     }
 

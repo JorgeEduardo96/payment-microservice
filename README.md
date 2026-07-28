@@ -114,9 +114,10 @@ payment-microservice/
 ├── shared-lib/            # Common shared library
 ├── frontend/              # Vue 3 + Vuetify SPA
 ├── keycloak/              # Realm exports (roles, clients, seed users)
-├── e2e-tests/             # End-to-end tests (full stack)
+├── e2e-tests/             # End-to-end tests (REST API, full stack)
+├── e2e-browser-tests/     # End-to-end tests (real browser via Playwright, full stack)
 ├── docker-compose.yml     # Full stack with observability tools
-└── docker-compose-e2e.yml # Lightweight stack for E2E tests
+└── docker-compose-e2e.yml # Lightweight stack (incl. frontend) for both E2E modules
 ```
 
 ---
@@ -185,6 +186,49 @@ The E2E tests account for this by waiting for the Kafka event to be consumed bef
 
 > The regular `./gradlew build` does **not** run E2E tests — they are executed as a dedicated step in CI.
 
+### Browser E2E Tests (Playwright, Java)
+
+- Location: `e2e-browser-tests/`
+- Tools: Playwright for Java, JUnit 5, Docker Compose
+- Unlike `e2e-tests` (which drives the REST API directly and authenticates via ROPC), this module
+  drives a real Chromium browser against the actual frontend, going through the real
+  **Authorization Code + PKCE** login flow — navigating to the app, filling Keycloak's hosted
+  login form, and asserting on what a user actually sees.
+- The full stack — including a `frontend` container — is started from `docker-compose-e2e.yml`
+  automatically before the tests and shut down after, the same way `e2e-tests` does.
+
+**What is tested:**
+
+| Scenario                                                                  |
+|-----------------------------------------------------------------------------|
+| Login/logout through the real Keycloak hosted login page                 |
+| `ADMIN` sees the full navigation (Clients, Orders); `USER`/`CLIENT` don't see the Clients nav item and are blocked (with a warning toast) if they navigate to `/clients` directly |
+| `ADMIN` creates and edits a client through the UI                        |
+| `ADMIN`'s notification bell receives a "client created" notification in real time |
+| A `CLIENT` places an order through the UI and sees its status flip from *Pending Payment* to *Paid*/*Failed* **without a manual refresh**, driven entirely by the WebSocket push |
+| That same `CLIENT` receives their own payment confirmation/failure notification in real time |
+
+**Run browser E2E tests locally:**
+
+```bash
+# Images must be available locally (build or pull first)
+./gradlew :e2e-browser-tests:test
+
+# To watch the browser instead of running headless:
+./gradlew :e2e-browser-tests:test -Dheadless=false
+```
+
+> Like `e2e-tests`, this module is excluded from `./gradlew build` and runs as a dedicated CI step,
+> after the Docker images are built.
+
+**Watching the tests run (`-Dheadless=false`) on Windows:** Playwright's bundled Chromium requires
+the Microsoft Visual C++ Redistributable (x64) to launch on Windows; without it, the browser fails
+to start with a "side-by-side configuration" error. `BaseBrowserE2ETest` detects Windows and falls
+back to launching the system's installed Microsoft Edge instead (`channel: "msedge"`, same Chromium
+engine underneath) so the suite works out of the box — you'll see an Edge window, not Chromium.
+Installing the VC++ Redistributable lets Playwright's own Chromium run instead, if preferred.
+CI (Linux) always uses the bundled Chromium.
+
 ### Frontend Tests
 
 - Location: `frontend/src/**/__test__`
@@ -251,7 +295,10 @@ Run frontend tests
 Build Docker images (local)
         |
         v
-Run E2E tests
+Run E2E tests (REST API)
+        |
+        v
+Run Browser E2E tests (Playwright)
         |
         v
 Push Docker images to Docker Hub (only if all tests pass)

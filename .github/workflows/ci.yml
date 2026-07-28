@@ -28,7 +28,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build all services
-        run: ./gradlew clean build -x :e2e-tests:test --no-daemon
+        run: ./gradlew clean build -x :e2e-tests:test -x :e2e-browser-tests:test --no-daemon
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -62,6 +62,9 @@ jobs:
 
       - name: Run E2E tests
         run: ./gradlew :e2e-tests:test --no-daemon
+
+      - name: Run Browser E2E tests (Playwright)
+        run: ./gradlew :e2e-browser-tests:test --no-daemon
 
       - name: Push Docker images
         run: |

@@ -6,6 +6,7 @@ import br.com.clientservice.domain.dto.ClientUpdateInputDTO;
 import br.com.clientservice.domain.event.ClientCreatedEvent;
 import br.com.clientservice.domain.event.ClientUpdatedEvent;
 import br.com.clientservice.domain.repository.ClientRepository;
+import br.com.sharedlib.model.BusinessException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,6 +39,11 @@ public class ClientService {
 
     @Transactional
     public ClientOutputDTO update(UUID id, ClientUpdateInputDTO inputDTO) {
+        var clientWithSameEmail = repository.findByEmail(inputDTO.email());
+        if (clientWithSameEmail != null && !clientWithSameEmail.id().equals(id)) {
+            throw new BusinessException("Email already exists");
+        }
+
         var updatedClient = repository.update(id, inputDTO);
         log.info("Client updated, id: {}", updatedClient.id());
 

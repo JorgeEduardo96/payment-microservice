@@ -28,7 +28,7 @@ repositories {
 }
 
 ext {
-    set('springCloudVersion', "2025.0.0-RC1")
+    set('springCloudVersion', "2025.0.0")
     set('grpcVersion', "1.54.0")
 }
 

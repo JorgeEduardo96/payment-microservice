@@ -1,11 +1,12 @@
-FROM gradle:8.5-jdk17 AS builder
+FROM eclipse-temurin:17-jdk AS builder
 
 WORKDIR /app
 
-COPY build.gradle settings.gradle ./
+COPY gradlew build.gradle settings.gradle ./
+COPY gradle ./gradle
 COPY src ./src
 
-RUN gradle clean build -x test --no-daemon
+RUN chmod +x gradlew && ./gradlew clean build -x test --no-daemon
 
 FROM eclipse-temurin:17-jre
 

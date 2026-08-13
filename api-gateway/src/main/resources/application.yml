@@ -3,21 +3,23 @@ spring:
     name: api-gateway
   cloud:
     gateway:
-      default-filters:
-        - AddRequestHeader=X-From-Gateway, true
-      routes:
-        - id: client-service
-          uri: lb://client-service
-          predicates:
-            - Path=/client/**
-        - id: order-service
-          uri: lb://order-service
-          predicates:
-            - Path=/order/**
-        - id: notification-service-ws
-          uri: lb://notification-service
-          predicates:
-            - Path=/ws-notifications/**
+      server:
+        webflux:
+          default-filters:
+            - AddRequestHeader=X-From-Gateway, true
+          routes:
+            - id: client-service
+              uri: lb://client-service
+              predicates:
+                - Path=/client/**
+            - id: order-service
+              uri: lb://order-service
+              predicates:
+                - Path=/order/**
+            - id: notification-service-ws
+              uri: lb://notification-service
+              predicates:
+                - Path=/ws-notifications/**
 
 server:
   port: 8080

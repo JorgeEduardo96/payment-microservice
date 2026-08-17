@@ -3,10 +3,12 @@ package br.com.clientservice.domain.service;
 import br.com.clientservice.domain.dto.ClientCreateInputDTO;
 import br.com.clientservice.domain.dto.ClientOutputDTO;
 import br.com.clientservice.domain.dto.ClientUpdateInputDTO;
-import br.com.clientservice.domain.event.ClientCreatedEvent;
-import br.com.clientservice.domain.event.ClientUpdatedEvent;
+import br.com.clientservice.domain.dto.OutboxInputDTO;
+import br.com.clientservice.domain.event.OutboxCreatedEvent;
 import br.com.clientservice.domain.repository.ClientRepository;
+import br.com.clientservice.domain.repository.OutboxRepository;
 import br.com.sharedlib.model.BusinessException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +24,8 @@ import java.util.UUID;
 public class ClientService {
 
     private final ClientRepository repository;
+    private final OutboxRepository outboxRepository;
+    private final ObjectMapper objectMapper;
     private final ApplicationEventPublisher publisher;
     private final KeycloakUserProvisioningService keycloakUserProvisioningService;
 
@@ -32,7 +36,14 @@ public class ClientService {
 
         keycloakUserProvisioningService.createUser(persisted.name(), persisted.email(), persisted.id());
 
-        publisher.publishEvent(new ClientCreatedEvent(persisted));
+        var outboxId = outboxRepository.insert(new OutboxInputDTO(
+                "Client",
+                persisted.id().toString(),
+                "client-created",
+                objectMapper.valueToTree(persisted).toString()
+        ));
+
+        publisher.publishEvent(new OutboxCreatedEvent(outboxId));
 
         return persisted;
     }
@@ -47,7 +58,14 @@ public class ClientService {
         var updatedClient = repository.update(id, inputDTO);
         log.info("Client updated, id: {}", updatedClient.id());
 
-        publisher.publishEvent(new ClientUpdatedEvent(updatedClient));
+        var outboxId = outboxRepository.insert(new OutboxInputDTO(
+                "Client",
+                updatedClient.id().toString(),
+                "client-updated",
+                objectMapper.valueToTree(updatedClient).toString()
+        ));
+
+        publisher.publishEvent(new OutboxCreatedEvent(outboxId));
 
         return updatedClient;
     }

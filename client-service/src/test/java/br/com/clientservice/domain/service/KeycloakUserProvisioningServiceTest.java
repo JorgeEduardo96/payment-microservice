@@ -1,6 +1,7 @@
 package br.com.clientservice.domain.service;
 
 import br.com.clientservice.config.properties.KeycloakAdminProperties;
+import br.com.clientservice.domain.exception.KeycloakUserProvisioningException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;

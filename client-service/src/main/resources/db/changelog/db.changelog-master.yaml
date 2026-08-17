@@ -1,3 +1,5 @@
 databaseChangeLog:
   - include:
       file: db/changelog/2025-05-27_create_client_table.sql
+  - include:
+      file: db/changelog/2026-08-14_create_outbox_table.sql

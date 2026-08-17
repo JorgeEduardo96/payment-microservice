@@ -51,6 +51,8 @@ eureka:
       defaultZone: http://service-registry:8761/eureka/
 
 client-service:
+  outbox:
+    retry-delay-ms: 43200000
   keycloak:
     token-uri: http://keycloak:8080/realms/payment-microservice/protocol/openid-connect/token
     admin-base-uri: http://keycloak:8080/admin/realms/payment-microservice
@@ -69,4 +71,3 @@ resilience4j:
           - java.io.IOException
           - com.fasterxml.jackson.core.JsonProcessingException
           - org.springframework.dao.DataAccessException
-

@@ -1,4 +1,4 @@
-package br.com.clientservice.domain.service;
+package br.com.clientservice.domain.exception;
 
 public class KeycloakUserProvisioningException extends RuntimeException {
 

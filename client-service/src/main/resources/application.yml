@@ -3,6 +3,11 @@ spring:
     name: client-service
   kafka:
     bootstrap-servers: localhost:19092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.add.type.headers: false
   datasource:
     url: jdbc:h2:file:./data/clientdb
     driver-class-name: org.h2.Driver

@@ -23,7 +23,7 @@ public class OutboxPublisher {
 
     private static final Duration DEFAULT_GRACE_PERIOD = Duration.ofSeconds(30);
 
-    private final ClientProducer producer;
+    private final ClientProducer clientProducer;
     private final OutboxRepository outboxRepository;
     private final ObjectMapper objectMapper;
 
@@ -62,7 +62,7 @@ public class OutboxPublisher {
         String topic = resolveTopic(outbox.getEventType());
         ClientOutputDTO client = objectMapper.readValue(outbox.getPayload(), ClientOutputDTO.class);
         log.info("Sending kafka event for outbox: {}, topic: {}", outbox.getId(), topic);
-        producer.sendClientEvent(topic, client);
+        clientProducer.sendClientEvent(topic, client);
     }
 
     private String resolveTopic(String eventType) {

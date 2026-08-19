@@ -1,9 +1,7 @@
 package br.com.clientservice.domain.event.listener;
 
-import br.com.clientservice.domain.dto.ClientOutputDTO;
-import br.com.clientservice.domain.event.ClientCreatedEvent;
-import br.com.clientservice.domain.event.ClientUpdatedEvent;
-import br.com.clientservice.messaging.ClientProducer;
+import br.com.clientservice.domain.event.OutboxCreatedEvent;
+import br.com.clientservice.messaging.OutboxPublisher;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -12,37 +10,24 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.UUID;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 public class ClientEventListenerTest {
 
     @Mock
-    private ClientProducer clientProducer;
+    private OutboxPublisher outboxPublisher;
 
     @InjectMocks
-    private ClientEventListener underTest;
+    private EventListener underTest;
 
     @Test
-    void handleClientCreated() throws Exception {
-        var client = mock(ClientOutputDTO.class);
-        when(client.id()).thenReturn(UUID.randomUUID());
-        var event = new ClientCreatedEvent(client);
+    void handleOutboxCreated() {
+        var outboxId = UUID.randomUUID();
 
-        underTest.handleClientCreated(event);
+        underTest.handleOutboxCreated(new OutboxCreatedEvent(outboxId));
 
-        verify(clientProducer).sendClientEvent("client-created-topic", client);
-    }
-
-    @Test
-    void handleClientUpdated() throws Exception {
-        var client = mock(ClientOutputDTO.class);
-        when(client.id()).thenReturn(UUID.randomUUID());
-        var event = new ClientUpdatedEvent(client);
-
-        underTest.handleClientUpdated(event);
-
-        verify(clientProducer).sendClientEvent("client-updated-topic", client);
+        verify(outboxPublisher).publish(outboxId);
     }
 
 }

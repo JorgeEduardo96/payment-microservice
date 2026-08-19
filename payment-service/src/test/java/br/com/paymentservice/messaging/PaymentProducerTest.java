@@ -1,7 +1,6 @@
 package br.com.paymentservice.messaging;
 
 import br.com.paymentservice.domain.dto.PaymentResponseDTO;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.junit.jupiter.api.Test;
@@ -21,8 +20,6 @@ public class PaymentProducerTest {
 
     @Mock
     private KafkaTemplate<String, Object> kafkaTemplate;
-    @Mock
-    private ObjectMapper objectMapper;
 
     @InjectMocks
     private PaymentProducer underTest;
@@ -31,19 +28,18 @@ public class PaymentProducerTest {
     void sendPaymentEvent() throws Exception {
         var mockedResponseDto = mock(PaymentResponseDTO.class);
         String topic = "test-topic";
-        var payload = "mocked payload";
 
-        ProducerRecord<String, Object> record = new ProducerRecord<>(topic, payload);
+        ProducerRecord<String, Object> record = new ProducerRecord<>(topic, mockedResponseDto);
         RecordMetadata metadata = mock(RecordMetadata.class);
         SendResult<String, Object> sendResult = new SendResult<>(record, metadata);
 
-        when(objectMapper.writeValueAsString(mockedResponseDto)).thenReturn(payload);
-        when(kafkaTemplate.send(topic, payload)).thenReturn(CompletableFuture.completedFuture(sendResult));
+        when(kafkaTemplate.send(topic, mockedResponseDto)).thenReturn(CompletableFuture.completedFuture(sendResult));
 
         underTest.sendPaymentEvent(topic, mockedResponseDto);
 
-        verify(kafkaTemplate).send(topic, payload);
-        verify(objectMapper).writeValueAsString(mockedResponseDto);
+        // The DTO must be sent directly (not pre-serialized) so the configured JsonSerializer
+        // is the only place serialization happens — avoiding double-encoding of the payload.
+        verify(kafkaTemplate).send(topic, mockedResponseDto);
     }
 
 

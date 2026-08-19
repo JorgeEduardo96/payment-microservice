@@ -3,6 +3,11 @@ spring:
     name: client-service
   kafka:
     bootstrap-servers: localhost:19092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.add.type.headers: false
   datasource:
     url: jdbc:h2:file:./data/clientdb
     driver-class-name: org.h2.Driver
@@ -48,6 +53,8 @@ eureka:
       defaultZone: http://localhost:8761/eureka/
 
 client-service:
+  outbox:
+    retry-delay-ms: 43200000
   keycloak:
     token-uri: http://localhost:8180/realms/payment-microservice/protocol/openid-connect/token
     admin-base-uri: http://localhost:8180/admin/realms/payment-microservice
@@ -66,4 +73,3 @@ resilience4j:
           - java.io.IOException
           - com.fasterxml.jackson.core.JsonProcessingException
           - org.springframework.dao.DataAccessException
-

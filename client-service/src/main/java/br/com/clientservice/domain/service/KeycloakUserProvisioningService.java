@@ -1,6 +1,7 @@
 package br.com.clientservice.domain.service;
 
 import br.com.clientservice.config.properties.KeycloakAdminProperties;
+import br.com.clientservice.domain.exception.KeycloakUserProvisioningException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpEntity;

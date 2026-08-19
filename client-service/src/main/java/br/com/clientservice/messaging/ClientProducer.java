@@ -1,7 +1,6 @@
 package br.com.clientservice.messaging;
 
 import br.com.clientservice.domain.dto.ClientOutputDTO;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.resilience4j.retry.annotation.Retry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -12,22 +11,19 @@ import org.springframework.stereotype.Service;
 public class ClientProducer {
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
-    private final ObjectMapper objectMapper;
 
-    public ClientProducer(KafkaTemplate<String, Object> kafkaTemplate, ObjectMapper objectMapper) {
+    public ClientProducer(KafkaTemplate<String, Object> kafkaTemplate) {
         this.kafkaTemplate = kafkaTemplate;
-        this.objectMapper = objectMapper;
     }
 
     @Retry(name = "defaultProducerRetry", fallbackMethod = "fallback")
-    public void sendClientEvent(String topic, ClientOutputDTO client) throws Exception {
+    public void sendClientEvent(String topic, ClientOutputDTO client) {
         try {
-            String payload = objectMapper.writeValueAsString(client);
-            kafkaTemplate.send(topic, payload).get();
+            kafkaTemplate.send(topic, client).get();
             log.info("Client {} sent successfully to topic {}", client, topic);
         } catch (Exception e) {
             log.error("Failed to process message: {}", e.getMessage());
-            throw e;
+            throw new IllegalStateException("Failed to send client event to Kafka", e);
         }
     }
 

@@ -3,19 +3,21 @@ package br.com.clientservice.controller;
 import br.com.clientservice.domain.dto.ClientCreateInputDTO;
 import br.com.clientservice.domain.dto.ClientUpdateInputDTO;
 import br.com.clientservice.domain.repository.ClientRepository;
+import br.com.clientservice.domain.repository.jpa.crudrepository.ClientJpaEntityCrudRepository;
 import br.com.clientservice.domain.service.KeycloakUserProvisioningService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.containers.KafkaContainer;
@@ -52,11 +54,22 @@ public class ClientControllerIntegrationTest {
     private ObjectMapper objectMapper;
     @Autowired
     private ClientRepository clientRepository;
+    @Autowired
+    private ClientJpaEntityCrudRepository clientJpaEntityCrudRepository;
 
     // Keycloak isn't part of this test's infrastructure (only Kafka is, via Testcontainers) —
     // this integration test is about client CRUD + Kafka production, not Keycloak provisioning.
-    @MockBean
+    @MockitoBean
     private KeycloakUserProvisioningService keycloakUserProvisioningService;
+
+    // The H2 database (jdbc:h2:mem:testdb) is shared across every integration test class in the
+    // same test JVM (DB_CLOSE_DELAY=-1 keeps it alive between contexts), so clients inserted here
+    // must be cleaned up — otherwise fixed CPF/email/name values used in other integration tests
+    // (e.g. ClientOutboxIntegrationTest) can collide with the unique constraints on this table.
+    @AfterEach
+    void cleanUp() {
+        clientJpaEntityCrudRepository.deleteAll();
+    }
 
     @Test
     void shouldCreateClientSuccessfully() throws Exception {

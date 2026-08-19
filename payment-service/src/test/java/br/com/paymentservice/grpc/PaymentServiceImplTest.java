@@ -1,52 +1,60 @@
 package br.com.paymentservice.grpc;
 
 import br.com.orderservice.grpc.client.stub.PaymentRequest;
-import br.com.paymentservice.domain.dto.PaymentResponseDTO;
-import br.com.paymentservice.messaging.PaymentProducer;
+import br.com.paymentservice.domain.service.PaymentService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.UUID;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class PaymentServiceImplTest {
 
     @Mock
-    private PaymentProducer paymentProducer;
+    private PaymentService paymentService;
 
     @InjectMocks
     private PaymentServiceImpl underTest;
 
     @Test
-    void processPayment() throws Exception {
+    void processPaymentDelegatesToPaymentService() {
         var paymentRequest = mock(PaymentRequest.class);
         var orderId = UUID.randomUUID().toString();
-        orderId = orderId.substring(0, orderId.length() - 1) + "A";
-        var clientId = UUID.randomUUID();
-
+        var clientId = UUID.randomUUID().toString();
 
         when(paymentRequest.getOrderId()).thenReturn(orderId);
         when(paymentRequest.getPaymentMethod()).thenReturn("CARD");
-        when(paymentRequest.getClientId()).thenReturn(clientId.toString());
+        when(paymentRequest.getClientId()).thenReturn(clientId);
 
         underTest.processPayment(paymentRequest, mock(io.grpc.stub.StreamObserver.class));
 
-        ArgumentCaptor<PaymentResponseDTO> captor = ArgumentCaptor.forClass(PaymentResponseDTO.class);
+        verify(paymentService).processPayment(orderId, clientId, "CARD");
+    }
 
-        verify(paymentProducer).sendPaymentEvent(eq("payment-topic"), captor.capture());
+    @Test
+    void processPaymentSwallowsExceptionsFromPaymentService() {
+        var paymentRequest = mock(PaymentRequest.class);
+        var orderId = UUID.randomUUID().toString();
+        var clientId = UUID.randomUUID().toString();
+        var responseObserver = mock(io.grpc.stub.StreamObserver.class);
 
-        PaymentResponseDTO capturedPaymentResponse = captor.getValue();
-        assertThat(capturedPaymentResponse.orderId().equals(UUID.fromString(orderId))).isTrue();
-        assertThat(capturedPaymentResponse.status()).isEqualTo("PAID");
-        assertThat(capturedPaymentResponse.paymentMethod()).isEqualTo("CARD");
-        assertThat(capturedPaymentResponse.clientId()).isEqualTo(clientId);
+        when(paymentRequest.getOrderId()).thenReturn(orderId);
+        when(paymentRequest.getPaymentMethod()).thenReturn("CARD");
+        when(paymentRequest.getClientId()).thenReturn(clientId);
+        doThrow(new RuntimeException("boom")).when(paymentService).processPayment(orderId, clientId, "CARD");
+
+        underTest.processPayment(paymentRequest, responseObserver);
+
+        // The gRPC contract must still complete successfully even if persisting/publishing the
+        // payment failed — the caller (order-service) isn't meant to see internal failures here.
+        verify(responseObserver).onNext(com.google.protobuf.Empty.getDefaultInstance());
+        verify(responseObserver).onCompleted();
     }
 
 }
+

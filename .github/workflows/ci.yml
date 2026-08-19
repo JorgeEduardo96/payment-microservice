@@ -6,29 +6,41 @@ on:
   pull_request:
     branches: [ main ]
 
+env:
+  GITHUB_USERNAME: ${{ secrets.GH_USERNAME }}
+  GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+
 jobs:
-  build:
+  # Compiles and tests every backend service once. Docker images no longer rebuild from
+  # source (see e2e-tests/e2e-browser-tests/push-images jobs below), so this is the only
+  # place Gradle actually compiles/tests the Java code — everything downstream just reuses
+  # the Gradle build cache to restore the already-built jars almost instantly.
+  backend-build-test:
     runs-on: ubuntu-latest
-
-    env:
-      GITHUB_USERNAME: ${{ secrets.GH_USERNAME }}
-      GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Java 17
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: '17'
+          cache: 'gradle'
 
       - name: Grant execute permission to gradlew
         run: chmod +x gradlew
 
-      - name: Build all services
+      - name: Build and test all backend services
         run: ./gradlew clean build -x :e2e-tests:test -x :e2e-browser-tests:test --no-daemon
+
+  # Runs independently of the backend build — no shared inputs — so it executes in
+  # parallel with backend-build-test instead of blocking behind it.
+  frontend-build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -45,8 +57,31 @@ jobs:
         working-directory: frontend
         run: npm run test
 
-      - name: Log in to Docker Hub
-        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+  # Docker-based REST E2E tests and Playwright browser E2E tests each spin up the full
+  # docker-compose-e2e.yml stack on fixed host ports, so they can't share a single runner.
+  # Running them as two separate jobs (instead of two sequential steps in one job) lets
+  # them execute concurrently on independent runners.
+  e2e-tests:
+    runs-on: ubuntu-latest
+    needs: [ backend-build-test, frontend-build-test ]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Grant execute permission to gradlew
+        run: chmod +x gradlew
+
+      # Restores jars from the Gradle build cache populated by backend-build-test —
+      # no recompilation happens here, just cache-hit restores.
+      - name: Assemble backend jars
+        run: ./gradlew assemble --no-daemon
 
       - name: Build Docker images
         run: |
@@ -54,22 +89,76 @@ jobs:
 
           for service in "${services[@]}"; do
             image="jorgeeduardo96/payment-microservice-${service}:latest"
-            docker build \
-              --build-arg GITHUB_USERNAME=$GITHUB_USERNAME \
-              --build-arg GITHUB_TOKEN=$GITHUB_TOKEN \
-              -t $image ./$service
+            docker build -t "$image" "./$service" &
           done
+          wait
 
       - name: Run E2E tests
         run: ./gradlew :e2e-tests:test --no-daemon
 
-      - name: Run Browser E2E tests (Playwright)
-        run: ./gradlew :e2e-browser-tests:test --no-daemon
+  e2e-browser-tests:
+    runs-on: ubuntu-latest
+    needs: [ backend-build-test, frontend-build-test ]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Push Docker images
+      - name: Set up Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Grant execute permission to gradlew
+        run: chmod +x gradlew
+
+      - name: Assemble backend jars
+        run: ./gradlew assemble --no-daemon
+
+      - name: Build Docker images
         run: |
           services=("api-gateway" "client-service" "notification-service" "order-service" "payment-service" "service-registry" "frontend")
 
           for service in "${services[@]}"; do
-            docker push "jorgeeduardo96/payment-microservice-${service}:latest"
+            image="jorgeeduardo96/payment-microservice-${service}:latest"
+            docker build -t "$image" "./$service" &
           done
+          wait
+
+      - name: Run Browser E2E tests (Playwright)
+        run: ./gradlew :e2e-browser-tests:test --no-daemon
+
+  push-images:
+    runs-on: ubuntu-latest
+    needs: [ e2e-tests, e2e-browser-tests ]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Grant execute permission to gradlew
+        run: chmod +x gradlew
+
+      - name: Assemble backend jars
+        run: ./gradlew assemble --no-daemon
+
+      - name: Log in to Docker Hub
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+      - name: Build and push Docker images
+        run: |
+          services=("api-gateway" "client-service" "notification-service" "order-service" "payment-service" "service-registry" "frontend")
+
+          for service in "${services[@]}"; do
+            image="jorgeeduardo96/payment-microservice-${service}:latest"
+            docker build -t "$image" "./$service"
+            docker push "$image" &
+          done
+          wait

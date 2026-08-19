@@ -1,6 +1,7 @@
 package br.com.paymentservice.messaging;
 
 import br.com.paymentservice.domain.dto.PaymentResponseDTO;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.junit.jupiter.api.Test;
@@ -13,7 +14,9 @@ import org.springframework.kafka.listener.KafkaMessageListenerContainer;
 import org.springframework.kafka.listener.MessageListener;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.context.EmbeddedKafka;
+import org.springframework.kafka.test.utils.ContainerTestUtils;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.util.Map;
 import java.util.UUID;
@@ -25,9 +28,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 // producer, but payment-service's context auto-starts a real gRPC server on the fixed port 9090
 // (see application-integration.yml) — leaving it enabled here races with
 // PaymentServiceGrpcIntegrationTest's own context for the same port when both run in one JVM.
+//
+// @DirtiesContext forces a fresh Spring context (and therefore a fresh embedded Kafka broker) for
+// this class: without it, Spring may reuse the same cached context/broker across this class and
+// PaymentOutboxIntegrationTest (both share identical @SpringBootTest properties), and leftover
+// messages on "payment-topic" from one class would be replayed into the other's consumers (Kafka
+// consumers default to auto.offset.reset=earliest for brand-new consumer groups).
 @SpringBootTest(properties = "grpc.server.port=-1")
 @EmbeddedKafka(partitions = 1, topics = {"payment-topic"})
 @EnableKafka
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class PaymentProducerIntegrationTest {
 
     @Autowired
@@ -41,9 +51,10 @@ public class PaymentProducerIntegrationTest {
         String topic = "payment-topic";
         var dto = new PaymentResponseDTO(UUID.randomUUID(), "PAID", "CASH", UUID.randomUUID());
 
-        Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("test-group", "false", embeddedKafka);
+        Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("test-group-" + UUID.randomUUID(), "false", embeddedKafka);
         consumerProps.put("key.deserializer", StringDeserializer.class);
         consumerProps.put("value.deserializer", StringDeserializer.class);
+        consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
 
         var cf = new DefaultKafkaConsumerFactory<String, String>(consumerProps);
         var container = new KafkaMessageListenerContainer<>(cf, new ContainerProperties(topic));
@@ -51,6 +62,7 @@ public class PaymentProducerIntegrationTest {
 
         container.setupMessageListener((MessageListener<String, String>) records::offer);
         container.start();
+        ContainerTestUtils.waitForAssignment(container, embeddedKafka.getPartitionsPerTopic());
 
         paymentProducer.sendPaymentEvent(topic, dto);
 
@@ -63,3 +75,4 @@ public class PaymentProducerIntegrationTest {
     }
 
 }
+

@@ -8,6 +8,17 @@ spring:
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
       properties:
         spring.json.add.type.headers: false
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: none
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+    contexts: test
 grpc:
   server:
     port: 9090
@@ -24,3 +35,8 @@ eureka:
       grpc-port: 9090
   client:
     enabled: false
+
+payment-service:
+  outbox:
+    retry-delay-ms: 43200000
+

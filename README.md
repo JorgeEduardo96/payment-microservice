@@ -31,10 +31,80 @@ didactic purpose.
 - **Apache Kafka** as the event backbone.
 - **Producers and Consumers** with `KafkaTemplate` and `@KafkaListener`.
 - Full support for:
-    - **Dead Letter Queue (DLQ)** for failed messages.
+    - **Transactional Outbox Pattern** in `client-service` and `payment-service` — see details below.
+    - **Dead Letter Queue (DLQ)** for failed messages (consumer-side, complementary to the outbox).
     - **Configurable retries** with fallback using Resilience4j.
     - **Idempotency** in consumers to avoid reprocessing.
 - **Events propagate state changes** between services, reducing coupling and increasing scalability.
+
+---
+
+## Transactional Outbox Pattern
+
+`client-service` and `payment-service` both persist a domain change and the corresponding Kafka event **in the same local
+database transaction**, instead of writing to the database and publishing to Kafka as two separate, non-atomic steps.
+
+### The problem it solves
+
+Without an outbox, a service typically does:
+
+```
+1. save entity to DB           (commit)
+2. publish event to Kafka      (separate, unrelated operation)
+```
+
+If the process crashes — or Kafka is unreachable — between steps 1 and 2, the database and the event stream permanently
+diverge: the state change happened, but nothing downstream ever finds out (or, in the opposite ordering, an event is
+published for a change that never actually got committed). This is the classic **dual-write problem**.
+
+### How it works here
+
+1. The business write (e.g. inserting a `Client` or a `Payment`) and an `outbox` row describing the event to be published
+   are persisted **in the same `@Transactional` method**, so they either both commit or both roll back together.
+2. Once that transaction **commits**, a `@TransactionalEventListener(phase = AFTER_COMMIT)` fires and hands the new
+   outbox row's id to an `OutboxPublisher`, which sends it to Kafka and marks it `PUBLISHED` (or `FAILED`, with the
+   error recorded, if Kafka itself is unreachable at that moment).
+3. A scheduled `OutboxRecoveryJob` periodically re-publishes any `PENDING`/`FAILED` outbox rows older than a short grace
+   period — this is what makes the pattern resilient to Kafka being down at decision-time: the event is never lost,
+   only delayed, because it was durably persisted before anything ever touched Kafka.
+
+### The `outbox` table
+
+| Column           | Purpose                                                                                          |
+|------------------|---------------------------------------------------------------------------------------------------|
+| `id`             | Outbox row identity; also what the `AFTER_COMMIT` listener/publisher key off of.                  |
+| `aggregate_type` | The kind of entity the event is about (e.g. `Client`, `Payment`) — useful for tracing/auditing.    |
+| `aggregate_id`   | The id of that entity, so a given event can be traced back to the record that caused it.           |
+| `event_type`     | Which topic/decision this row maps to (e.g. `client-created`, `payment-processed`).                |
+| `payload`        | The serialized event body actually sent to Kafka — captured at decision time, not recomputed later.|
+| `status`         | `PENDING` → `PROCESSING` → `PUBLISHED`, or `FAILED` if Kafka rejected/timed out the send.           |
+| `attempts`       | How many times a (re)publish was attempted — visibility into flaky sends.                          |
+| `last_error`     | The last failure message, for troubleshooting without needing to dig through logs.                 |
+| `created_at`     | Drives the recovery job's "older than N seconds" retry query.                                      |
+| `published_at`   | Set once the send actually succeeds — an audit trail of when the event really left the building.   |
+
+### Why `payment-service` needed more than just an outbox table
+
+`payment-service` used to be **entirely stateless**: a gRPC call came in, a `PAID`/`FAILED` decision was computed on the
+spot, and it was published to Kafka directly — nothing was ever persisted. That meant:
+
+- **No idempotency** — a retried gRPC call (e.g. after a client-side timeout) could re-decide and re-publish the same
+  payment twice.
+- **Silently lost decisions** — if the Kafka send failed, the exception was only logged; the order stayed stuck in
+  `PENDING_PAYMENT` forever with zero record that a decision had ever been made.
+
+Since the outbox pattern requires *something transactional to piggyback on*, adding it here meant introducing a real
+`payment` table first, with `order_id` as a **unique, database-enforced idempotency key** — not just an in-app check,
+since two concurrent requests for the same order could both pass an application-level lookup before either commits.
+The DB-level unique constraint (and the `DataIntegrityViolationException` it triggers) is the real safety net for that
+race. The now-durable decision is published via the same outbox mechanism described above.
+
+### DLQ and outbox are complementary, not redundant
+
+The outbox pattern addresses **producer-side** reliability (never losing a decision once it's made). The existing
+**Dead Letter Queue** (`DeadLetterPublishingRecoverer`) addresses a different, **consumer-side** failure mode: a
+message that was published successfully but that a *consumer* repeatedly fails to process (e.g. a poison-pill payload
+or a transient downstream error). Both mechanisms stay in place, each covering a different half of the pipeline.
 
 ---
 
@@ -66,9 +136,10 @@ mapper, so the frontend and `notification-service` can tell which Client a logge
 - `notification-service`'s `StompAuthChannelInterceptor` enforces this at the STOMP `CONNECT` frame itself, since the
   Gateway can only see the initial HTTP upgrade request, not the STOMP-level `Authorization` header sent afterward.
 
-**Payment processing** includes a simulated ~3s processing delay (`payment-service`) before the outcome (`PAID`/`FAILED`)
-is decided and published to Kafka — `order-service` updates the order's status from that event, and `notification-service`
-pushes the WebSocket update plus (for `PAID`) a confirmation email via SendGrid.
+**Payment processing** is decided (`PAID`/`FAILED`) and durably persisted (`payment-service`) before being published to
+Kafka via the transactional outbox pattern (see [Transactional Outbox Pattern](#transactional-outbox-pattern) below) —
+`order-service` updates the order's status from that event, and `notification-service` pushes the WebSocket update plus
+(for `PAID`) a confirmation email via SendGrid.
 
 ---
 
@@ -88,6 +159,8 @@ The frontend supports **English, Portuguese, and Spanish** via `vue-i18n`.
 ## Best Practices Followed
 
 - Clear separation between domains, layers, and responsibilities.
+- **Transactional Outbox Pattern** (`client-service`, `payment-service`) for reliable event publishing — see
+  [Transactional Outbox Pattern](#transactional-outbox-pattern).
 - Retry and Fallback with **Resilience4j**.
 - **Unit, integration, and E2E tests** with significant coverage.
 - Observability using:

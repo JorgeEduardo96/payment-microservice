@@ -3,12 +3,16 @@ package br.com.paymentservice.grpc;
 import br.com.orderservice.grpc.client.stub.PaymentRequest;
 import br.com.orderservice.grpc.client.stub.PaymentServiceGrpc;
 import br.com.paymentservice.domain.dto.PaymentResponseDTO;
+import br.com.paymentservice.domain.repository.jpa.crudrepository.OutboxJpaEntityCrudRepository;
+import br.com.paymentservice.domain.repository.jpa.crudrepository.PaymentJpaEntityCrudRepository;
 import br.com.paymentservice.messaging.PaymentProducer;
 import com.google.protobuf.Empty;
 import net.devh.boot.grpc.client.inject.GrpcClient;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -28,6 +32,18 @@ public class PaymentServiceGrpcIntegrationTest {
 
     @MockitoBean
     private PaymentProducer paymentProducer;
+
+    @Autowired
+    private PaymentJpaEntityCrudRepository paymentCrudRepository;
+
+    @Autowired
+    private OutboxJpaEntityCrudRepository outboxCrudRepository;
+
+    @AfterEach
+    void cleanUp() {
+        outboxCrudRepository.deleteAll();
+        paymentCrudRepository.deleteAll();
+    }
 
     @Test
     void shouldSendKafkaEventAndReturnEmpty() throws Exception {

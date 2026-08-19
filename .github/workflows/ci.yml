@@ -2,7 +2,7 @@ name: CI - Build and Test all services
 
 on:
   push:
-    branches: [ main, transactional-outbox-impl ]
+    branches: [ main ]
   pull_request:
     branches: [ main ]
 

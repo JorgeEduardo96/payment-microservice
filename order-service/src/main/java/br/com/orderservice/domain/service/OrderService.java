@@ -6,6 +6,7 @@ import br.com.orderservice.domain.enumeration.OrderStatus;
 import br.com.orderservice.domain.event.OrderCreatedEvent;
 import br.com.orderservice.domain.repository.ClientRepository;
 import br.com.orderservice.domain.repository.OrderRepository;
+import br.com.orderservice.domain.repository.OrderSagaRepository;
 import br.com.sharedlib.model.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
@@ -23,6 +24,7 @@ public class OrderService {
 
     private final OrderRepository repository;
     private final ClientRepository clientRepository;
+    private final OrderSagaRepository sagaRepository;
     private final ApplicationEventPublisher publisher;
 
     @Transactional
@@ -33,6 +35,10 @@ public class OrderService {
         }
         var outputDTO = repository.createOrder(dto);
         var client = optionalClient.get();
+
+        // Same transaction as the order insert: if either write fails, both roll back
+        // together, so we never end up with an order that has no saga tracking it.
+        sagaRepository.create(outputDTO.id());
 
         var response = new OrderOutputDTO(outputDTO.id(), outputDTO.total(), outputDTO.shippingAddress(),
                 client.id(), client.name(), outputDTO.status(), outputDTO.paymentMethod());

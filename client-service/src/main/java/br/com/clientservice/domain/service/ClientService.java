@@ -33,17 +33,24 @@ public class ClientService {
     public ClientOutputDTO insert(ClientCreateInputDTO inputDTO) {
         var persisted = repository.insert(inputDTO);
         log.info("New client persisted, id: {}", persisted.id());
+        String userId = keycloakUserProvisioningService.createUser(persisted.name(), persisted.email(), persisted.id());
+        log.info("New client persisted at keycloak, id: {}", userId);
 
-        keycloakUserProvisioningService.createUser(persisted.name(), persisted.email(), persisted.id());
+        try {
+            keycloakUserProvisioningService.assignClientRole(userId);
 
-        var outboxId = outboxRepository.insert(new OutboxInputDTO(
-                "Client",
-                persisted.id().toString(),
-                "client-created",
-                objectMapper.valueToTree(persisted).toString()
-        ));
+            var outboxId = outboxRepository.insert(new OutboxInputDTO(
+                    "Client",
+                    persisted.id().toString(),
+                    "client-created",
+                    objectMapper.valueToTree(persisted).toString()
+            ));
 
-        publisher.publishEvent(new OutboxCreatedEvent(outboxId));
+            publisher.publishEvent(new OutboxCreatedEvent(outboxId));
+        } catch (Exception e) {
+            keycloakUserProvisioningService.deleteUser(UUID.fromString(userId));
+            throw new BusinessException("Failed to complete client registration: " + e.getMessage(), e);
+        }
 
         return persisted;
     }

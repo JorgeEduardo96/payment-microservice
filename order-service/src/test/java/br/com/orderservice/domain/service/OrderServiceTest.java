@@ -8,6 +8,7 @@ import br.com.orderservice.domain.enumeration.PaymentMethod;
 import br.com.orderservice.domain.event.OrderCreatedEvent;
 import br.com.orderservice.domain.repository.ClientRepository;
 import br.com.orderservice.domain.repository.OrderRepository;
+import br.com.orderservice.domain.repository.OrderSagaRepository;
 import br.com.sharedlib.model.EntityNotFoundException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,6 +33,8 @@ public class OrderServiceTest {
     private OrderRepository repository;
     @Mock
     private ClientRepository clientRepository;
+    @Mock
+    private OrderSagaRepository sagaRepository;
     @Mock
     private ApplicationEventPublisher publisher;
 
@@ -71,6 +74,7 @@ public class OrderServiceTest {
         verify(publisher).publishEvent(any(OrderCreatedEvent.class));
         verify(clientRepository).findById(mockedInput.clientId());
         verify(repository).createOrder(mockedInput);
+        verify(sagaRepository).create(orderId);
     }
 
     @Test

@@ -60,3 +60,14 @@ resilience4j:
         enable-exponential-backoff: true
         exponential-backoff-multiplier: 2.0
 
+order-service:
+  saga:
+    # How long a saga can sit in PAYMENT_REQUESTED before it's considered stuck
+    # (e.g. the payment-topic Kafka event never arrived) and gets compensated.
+    timeout-minutes: 5
+    # How often the timeout job scans for stuck sagas.
+    check-interval-ms: 60000
+    # Max compensation attempts before a saga is marked FAILED (terminal, needs
+    # manual intervention) instead of being retried forever.
+    max-compensation-retries: 3
+

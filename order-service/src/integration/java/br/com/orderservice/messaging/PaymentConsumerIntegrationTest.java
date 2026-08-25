@@ -5,8 +5,11 @@ import br.com.orderservice.domain.dto.OrderInputDTO;
 import br.com.orderservice.domain.dto.PaymentResponseEventDTO;
 import br.com.orderservice.domain.enumeration.OrderStatus;
 import br.com.orderservice.domain.enumeration.PaymentMethod;
+import br.com.orderservice.domain.enumeration.SagaStatus;
 import br.com.orderservice.domain.repository.ClientRepository;
 import br.com.orderservice.domain.repository.OrderRepository;
+import br.com.orderservice.domain.repository.OrderSagaRepository;
+import br.com.orderservice.domain.repository.jpa.crudrepository.OrderSagaJpaEntityCrudRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -46,6 +49,10 @@ public class PaymentConsumerIntegrationTest {
     private ClientRepository clientRepository;
     @Autowired
     private ObjectMapper objectMapper;
+    @Autowired
+    private OrderSagaRepository sagaRepository;
+    @Autowired
+    private OrderSagaJpaEntityCrudRepository sagaCrudRepository;
 
     private KafkaProducer<String, String> producer;
 
@@ -62,6 +69,7 @@ public class PaymentConsumerIntegrationTest {
         clientRepository.upsert(new ClientEventDTO(clientId, "John Doe", LocalDateTime.now(), null));
         var order = orderRepository.createOrder(new OrderInputDTO(clientId, new BigDecimal("100.00"), "123 Main St", PaymentMethod.CARD, null));
         orderId = order.id();
+        sagaRepository.create(orderId);
     }
 
     @Test
@@ -79,6 +87,32 @@ public class PaymentConsumerIntegrationTest {
                 .orElse(null);
         assertThat(updatedOrder).isNotNull();
         assertThat(updatedOrder.status()).isEqualTo(OrderStatus.PAID);
+
+        var saga = sagaCrudRepository.findByOrderId(orderId).orElse(null);
+        assertThat(saga).isNotNull();
+        assertThat(saga.getStatus()).isEqualTo(SagaStatus.COMPLETED);
+    }
+
+    @Test
+    void shouldMarkOrderAndSagaAsCompensatedWhenPaymentFails() throws Exception {
+        var paymentResponseEvent = new PaymentResponseEventDTO(orderId, "FAILED", "CARD", clientId);
+        var message = objectMapper.writeValueAsString(paymentResponseEvent);
+
+        producer.send(new ProducerRecord<>("payment-topic", message));
+        producer.flush();
+
+        Thread.sleep(5000);
+        var updatedOrder = orderRepository.ordersByClientId(clientId).stream()
+                .filter(order -> order.id().equals(orderId))
+                .findFirst()
+                .orElse(null);
+        assertThat(updatedOrder).isNotNull();
+        assertThat(updatedOrder.status()).isEqualTo(OrderStatus.FAILED);
+
+        var saga = sagaCrudRepository.findByOrderId(orderId).orElse(null);
+        assertThat(saga).isNotNull();
+        assertThat(saga.getStatus()).isEqualTo(SagaStatus.COMPENSATED);
+        assertThat(saga.getLastError()).contains("Payment declined");
     }
 
     @Test

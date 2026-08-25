@@ -3,3 +3,5 @@ databaseChangeLog:
       file: db/changelog/2025-05-27_create_client_table.sql
   - include:
       file: db/changelog/2025-06-01_create_order_table.sql
+  - include:
+      file: db/changelog/2025-08-25_create_order_saga_table.sql

@@ -14,16 +14,11 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
 import java.net.URI;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * Provisions a Keycloak login for a newly registered Client, using a dedicated
- * service-account client (client-service) scoped to manage-users on this realm only —
- * see StompAuthChannelInterceptor/notification-service SecurityConfig for the analogous
- * "don't use the realm superadmin from application code" reasoning.
- */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -32,18 +27,39 @@ public class KeycloakUserProvisioningService {
     private final RestTemplate keycloakAdminRestTemplate;
     private final KeycloakAdminProperties properties;
 
-    public void createUser(String name, String email, UUID clientId) {
-        String accessToken = fetchServiceAccountToken();
+    private String cachedAccessToken;
+    private Instant cachedAccessTokenExpiresAt;
 
+    public String createUser(String name, String email, UUID clientId) {
+        var accessToken = fetchServiceAccountToken();
         URI userLocation = createKeycloakUser(accessToken, name, email, clientId);
         String userId = extractUserId(userLocation);
 
-        assignClientRole(accessToken, userId);
-
         log.info("Keycloak user provisioned for client, email: {}, keycloakUserId: {}", email, userId);
+
+        return userId;
+    }
+
+    public void deleteUser(UUID userId) {
+        var accessToken = fetchServiceAccountToken();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(accessToken);
+
+        try {
+            keycloakAdminRestTemplate.exchange(
+                    properties.getAdminBaseUri() + "/users/" + userId,
+                    HttpMethod.DELETE, new HttpEntity<>(headers), Void.class);
+            log.info("Keycloak user deleted, keycloakUserId: {}", userId);
+        } catch (Exception e) {
+            throw new KeycloakUserProvisioningException("Failed to delete Keycloak user with id " + userId, e);
+        }
     }
 
     private String fetchServiceAccountToken() {
+        if (cachedAccessToken != null && Instant.now().isBefore(cachedAccessTokenExpiresAt)) {
+            return cachedAccessToken;
+        }
+
         MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
         form.add("grant_type", "client_credentials");
         form.add("client_id", properties.getClientId());
@@ -56,11 +72,19 @@ public class KeycloakUserProvisioningService {
             var response = keycloakAdminRestTemplate.postForEntity(
                     properties.getTokenUri(), new HttpEntity<>(form, headers), Map.class);
 
-            Object token = response.getBody() != null ? response.getBody().get("access_token") : null;
+            Map<?, ?> body = response.getBody();
+            Object token = body != null ? body.get("access_token") : null;
             if (token == null) {
                 throw new KeycloakUserProvisioningException("Keycloak token response had no access_token");
             }
-            return token.toString();
+
+            long expiresInSeconds = body.get("expires_in") instanceof Number n ? n.longValue() : 60;
+            cachedAccessToken = token.toString();
+            cachedAccessTokenExpiresAt = Instant.now().plusSeconds(expiresInSeconds - 10);
+
+            return cachedAccessToken;
+        } catch (KeycloakUserProvisioningException e) {
+            throw e;
         } catch (Exception e) {
             throw new KeycloakUserProvisioningException("Failed to authenticate client-service against Keycloak", e);
         }
@@ -101,7 +125,8 @@ public class KeycloakUserProvisioningService {
         }
     }
 
-    private void assignClientRole(String accessToken, String userId) {
+    public void assignClientRole(String userId) {
+        var accessToken = fetchServiceAccountToken();
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(accessToken);
 

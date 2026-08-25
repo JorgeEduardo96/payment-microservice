@@ -11,7 +11,13 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.UUID;
 
-import static org.springframework.test.web.client.match.MockRestRequestMatchers.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.springframework.http.HttpMethod.DELETE;
+import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.http.HttpMethod.POST;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
@@ -20,13 +26,12 @@ class KeycloakUserProvisioningServiceTest {
     private static final String TOKEN_URI = "http://keycloak/realms/payment-microservice/protocol/openid-connect/token";
     private static final String ADMIN_BASE_URI = "http://keycloak/admin/realms/payment-microservice";
 
-    private RestTemplate restTemplate;
     private MockRestServiceServer server;
     private KeycloakUserProvisioningService underTest;
 
     @BeforeEach
     void setUp() {
-        restTemplate = new RestTemplate();
+        RestTemplate restTemplate = new RestTemplate();
         server = MockRestServiceServer.createServer(restTemplate);
 
         KeycloakAdminProperties properties = new KeycloakAdminProperties();
@@ -41,26 +46,80 @@ class KeycloakUserProvisioningServiceTest {
     }
 
     @Test
-    void createUserAuthenticatesCreatesUserAndAssignsClientRole() {
+    void createUserAuthenticatesAndCreatesKeycloakUser() {
         server.expect(requestTo(TOKEN_URI))
-                .andExpect(method(org.springframework.http.HttpMethod.POST))
-                .andRespond(withSuccess("{\"access_token\":\"svc-token\"}", MediaType.APPLICATION_JSON));
+                .andExpect(method(POST))
+                .andRespond(withSuccess("{\"access_token\":\"svc-token\",\"expires_in\":60}", MediaType.APPLICATION_JSON));
 
         server.expect(requestTo(ADMIN_BASE_URI + "/users"))
-                .andExpect(method(org.springframework.http.HttpMethod.POST))
-                .andExpect(header("Authorization", "Bearer svc-token"))
+                .andExpect(method(POST))
+                .andRespond(withStatus(HttpStatus.CREATED)
+                        .location(java.net.URI.create(ADMIN_BASE_URI + "/users/user-123")));
+
+        String userId = underTest.createUser("Jorge Silva", "jorge@example.com", UUID.fromString("11111111-1111-1111-1111-111111111111"));
+
+        assertEquals("user-123", userId);
+        server.verify();
+    }
+
+    @Test
+    void assignClientRoleLooksUpRoleAndAssignsIt() {
+        server.expect(requestTo(TOKEN_URI))
+                .andExpect(method(POST))
+                .andRespond(withSuccess("{\"access_token\":\"svc-token\",\"expires_in\":60}", MediaType.APPLICATION_JSON));
+
+        server.expect(requestTo(ADMIN_BASE_URI + "/roles/CLIENT"))
+                .andExpect(method(GET))
+                .andRespond(withSuccess("{\"id\":\"role-456\",\"name\":\"CLIENT\"}", MediaType.APPLICATION_JSON));
+
+        server.expect(requestTo(ADMIN_BASE_URI + "/users/user-123/role-mappings/realm"))
+                .andExpect(method(POST))
+                .andRespond(withStatus(HttpStatus.NO_CONTENT));
+
+        underTest.assignClientRole("user-123");
+
+        server.verify();
+    }
+
+    @Test
+    void deleteUserRemovesKeycloakUser() {
+        server.expect(requestTo(TOKEN_URI))
+                .andExpect(method(POST))
+                .andRespond(withSuccess("{\"access_token\":\"svc-token\",\"expires_in\":60}", MediaType.APPLICATION_JSON));
+
+        server.expect(requestTo(ADMIN_BASE_URI + "/users/11111111-1111-1111-1111-111111111111"))
+                .andExpect(method(DELETE))
+                .andRespond(withStatus(HttpStatus.NO_CONTENT));
+
+        underTest.deleteUser(UUID.fromString("11111111-1111-1111-1111-111111111111"));
+
+        server.verify();
+    }
+
+    @Test
+    void reusesCachedTokenAcrossCallsUntilItExpires() {
+        // Only ONE token request is stubbed below - if the token weren't cached and
+        // reused, the second Keycloak call (assignClientRole) would try to fetch a
+        // new token and fail because no matching stub exists for it.
+        server.expect(requestTo(TOKEN_URI))
+                .andExpect(method(POST))
+                .andRespond(withSuccess("{\"access_token\":\"svc-token\",\"expires_in\":60}", MediaType.APPLICATION_JSON));
+
+        server.expect(requestTo(ADMIN_BASE_URI + "/users"))
+                .andExpect(method(POST))
                 .andRespond(withStatus(HttpStatus.CREATED)
                         .location(java.net.URI.create(ADMIN_BASE_URI + "/users/user-123")));
 
         server.expect(requestTo(ADMIN_BASE_URI + "/roles/CLIENT"))
-                .andExpect(method(org.springframework.http.HttpMethod.GET))
+                .andExpect(method(GET))
                 .andRespond(withSuccess("{\"id\":\"role-456\",\"name\":\"CLIENT\"}", MediaType.APPLICATION_JSON));
 
         server.expect(requestTo(ADMIN_BASE_URI + "/users/user-123/role-mappings/realm"))
-                .andExpect(method(org.springframework.http.HttpMethod.POST))
+                .andExpect(method(POST))
                 .andRespond(withStatus(HttpStatus.NO_CONTENT));
 
         underTest.createUser("Jorge Silva", "jorge@example.com", UUID.fromString("11111111-1111-1111-1111-111111111111"));
+        underTest.assignClientRole("user-123");
 
         server.verify();
     }
@@ -71,7 +130,7 @@ class KeycloakUserProvisioningServiceTest {
                 .andRespond(withStatus(HttpStatus.UNAUTHORIZED));
 
         UUID clientId = UUID.fromString("11111111-1111-1111-1111-111111111111");
-        org.junit.jupiter.api.Assertions.assertThrows(KeycloakUserProvisioningException.class,
+        assertThrows(KeycloakUserProvisioningException.class,
                 () -> underTest.createUser("Jorge Silva", "jorge@example.com", clientId));
     }
 }

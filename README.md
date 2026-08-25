@@ -32,6 +32,8 @@ didactic purpose.
 - **Producers and Consumers** with `KafkaTemplate` and `@KafkaListener`.
 - Full support for:
     - **Transactional Outbox Pattern** in `client-service` and `payment-service` — see details below.
+    - **Orchestrated SAGA Pattern** coordinating the order → payment distributed transaction in `order-service` — see
+      details below.
     - **Dead Letter Queue (DLQ)** for failed messages (consumer-side, complementary to the outbox).
     - **Configurable retries** with fallback using Resilience4j.
     - **Idempotency** in consumers to avoid reprocessing.
@@ -108,6 +110,67 @@ or a transient downstream error). Both mechanisms stay in place, each covering a
 
 ---
 
+## SAGA Pattern (Order → Payment Orchestration)
+
+Creating an order and charging for it spans two services (`order-service` and `payment-service`) with no distributed
+transaction tying them together. `order-service` implements an **orchestrated SAGA** to make that multi-step,
+multi-service process explicit, trackable, and — most importantly — **self-recovering** when something goes wrong
+partway through.
+
+### The problem it solves
+
+Without a saga, the order → payment flow relied on the choreography between services working out on its own:
+`order-service` calls `payment-service` via gRPC, which asynchronously publishes the result to Kafka, which
+`order-service` consumes to update the order's final status. If the gRPC call failed, the Kafka event was lost, or
+`order-service` was down when the event arrived, there was **no mechanism tracking that anything had gone wrong** —
+the order would simply stay in `PENDING_PAYMENT` forever, with no compensating action ever taking place.
+
+### How it works here
+
+1. **`order_saga` table**: tracks the distributed transaction's own state — `STARTED` → `PAYMENT_REQUESTED` →
+   `COMPLETED`/`COMPENSATED`/`FAILED` — separately from `OrderStatus`, which reflects what the customer sees
+   (`PENDING_PAYMENT`/`PAID`/`FAILED`). The saga row is created **atomically with the order**, in the same
+   `@Transactional` method, so an order can never exist without a saga tracking it.
+2. **State transitions at every step of the flow**:
+    - Right before the gRPC call to `payment-service` → `PAYMENT_REQUESTED`.
+    - The Kafka `payment-topic` event is consumed → `COMPLETED` (payment `PAID`) or `COMPENSATED` (payment
+      `FAILED`), matching the order status update transactionally.
+    - The gRPC call itself fails after Resilience4j's retries are exhausted → the order is cancelled and the saga
+      is marked `COMPENSATED` by the `@Retry` fallback method.
+3. **`OrderSagaTimeoutJob`** — the piece that actually closes the "stuck forever" gap: a `@Scheduled` job that
+   periodically looks for sagas that have been sitting in `PAYMENT_REQUESTED` for longer than a configurable timeout
+   (e.g. the Kafka event never arrived) and **compensates them automatically** — cancelling the order instead of
+   leaving it pending indefinitely. If the compensation itself fails (e.g. the database is temporarily unreachable),
+   the saga's retry count is incremented until a configurable maximum, at which point it's marked `FAILED` — a
+   terminal state signalling that manual intervention is needed, instead of being retried forever.
+
+```
+createOrder()  ──►  STARTED  ──►  PAYMENT_REQUESTED  ──┬──►  COMPLETED     (payment PAID via Kafka)
+                                                        ├──►  COMPENSATED  (payment FAILED via Kafka, or gRPC
+                                                        │                   retries exhausted, or timeout job fired)
+                                                        └──►  FAILED       (compensation itself kept failing)
+```
+
+### Why orchestration, not choreography
+
+The saga is **orchestrated** by `order-service` (it owns the saga state and drives every transition) rather than
+**choreographed** (each service reacting independently to events with no central view). With only two services
+involved, choreography would have worked for the happy path, but it offers no natural place to put a timeout/recovery
+mechanism — there's no single owner responsible for noticing "this transaction never finished." Orchestration gives
+the saga state machine a home (`order-service`) and, with it, a natural place for `OrderSagaTimeoutJob` to live.
+
+### Configuration
+
+```yaml
+order-service:
+  saga:
+    timeout-minutes: 5          # how long a saga can sit in PAYMENT_REQUESTED before being compensated
+    check-interval-ms: 60000    # how often the timeout job scans for stuck sagas
+    max-compensation-retries: 3 # attempts before a saga is marked FAILED instead of retried forever
+```
+
+---
+
 ## Authentication & Authorization
 
 **Keycloak** (`keycloak/realm-export.json`) is the identity provider for the whole platform. The frontend logs in via the
@@ -161,6 +224,8 @@ The frontend supports **English, Portuguese, and Spanish** via `vue-i18n`.
 - Clear separation between domains, layers, and responsibilities.
 - **Transactional Outbox Pattern** (`client-service`, `payment-service`) for reliable event publishing — see
   [Transactional Outbox Pattern](#transactional-outbox-pattern).
+- **Orchestrated SAGA Pattern** (`order-service`) coordinating the order → payment distributed transaction, with
+  automatic compensation on timeout/failure — see [SAGA Pattern](#saga-pattern-order--payment-orchestration).
 - Retry and Fallback with **Resilience4j**.
 - **Unit, integration, and E2E tests** with significant coverage.
 - Observability using:

@@ -66,8 +66,8 @@ dependencies {
     // Sendgrid
     implementation 'com.sendgrid:sendgrid-java:4.10.2'
 
-    // H2
-    runtimeOnly 'com.h2database:h2'
+    // PostgreSQL (used at runtime — local dev and docker/k8s profiles)
+    runtimeOnly 'org.postgresql:postgresql'
 
     // Liquibase
     implementation 'org.liquibase:liquibase-core'
@@ -89,6 +89,7 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.kafka:spring-kafka-test'
     testImplementation 'org.apache.commons:commons-lang3:3.14.0'
+    testImplementation 'com.h2database:h2'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testAnnotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
     integrationAnnotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'

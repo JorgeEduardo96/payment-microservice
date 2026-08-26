@@ -67,8 +67,8 @@ dependencies {
     // Liquibase
     implementation 'org.liquibase:liquibase-core'
 
-    // H2 Database
-    runtimeOnly 'com.h2database:h2'
+    // PostgreSQL (used at runtime — local dev and docker/k8s profiles)
+    runtimeOnly 'org.postgresql:postgresql'
 
     // Lombok
     compileOnly 'org.projectlombok:lombok:1.18.28'

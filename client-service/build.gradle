@@ -75,8 +75,8 @@ dependencies {
     // Resilience4j
     implementation 'io.github.resilience4j:resilience4j-spring-boot3:2.2.0'
 
-    // H2 Database
-    runtimeOnly 'com.h2database:h2'
+    // PostgreSQL (used at runtime — local dev and docker/k8s profiles)
+    runtimeOnly 'org.postgresql:postgresql'
 
     // Micrometer Tracing + Zipkin + Prometheus
     implementation 'io.micrometer:micrometer-tracing-bridge-brave'

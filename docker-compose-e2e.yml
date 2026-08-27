@@ -74,6 +74,15 @@ services:
     networks:
       - e2e-network
 
+  client-postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: clientdb
+      POSTGRES_USER: client_service
+      POSTGRES_PASSWORD: client_service
+    networks:
+      - e2e-network
+
   client-service:
     image: jorgeeduardo96/payment-microservice-client-service:latest
     ports:
@@ -85,9 +94,20 @@ services:
         condition: service_healthy
       keycloak:
         condition: service_healthy
+      client-postgres:
+        condition: service_started
     volumes:
       - ./scripts/wait-for-it.sh:/wait-for-it.sh
-    command: ["./wait-for-it.sh", "service-registry:8761", "--", "java", "-jar", "client-service.jar"]
+    command: ["sh", "-c", "./wait-for-it.sh client-postgres:5432 -- ./wait-for-it.sh service-registry:8761 -- java -jar client-service.jar"]
+    networks:
+      - e2e-network
+
+  order-postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: orderdb
+      POSTGRES_USER: order_service
+      POSTGRES_PASSWORD: order_service
     networks:
       - e2e-network
 
@@ -100,9 +120,20 @@ services:
     depends_on:
       service-registry:
         condition: service_healthy
+      order-postgres:
+        condition: service_started
     volumes:
       - ./scripts/wait-for-it.sh:/wait-for-it.sh
-    command: ["./wait-for-it.sh", "service-registry:8761", "--", "java", "-jar", "order-service.jar"]
+    command: ["sh", "-c", "./wait-for-it.sh order-postgres:5432 -- ./wait-for-it.sh service-registry:8761 -- java -jar order-service.jar"]
+    networks:
+      - e2e-network
+
+  payment-postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: paymentdb
+      POSTGRES_USER: payment_service
+      POSTGRES_PASSWORD: payment_service
     networks:
       - e2e-network
 
@@ -115,9 +146,20 @@ services:
     depends_on:
       service-registry:
         condition: service_healthy
+      payment-postgres:
+        condition: service_started
     volumes:
       - ./scripts/wait-for-it.sh:/wait-for-it.sh
-    command: ["./wait-for-it.sh", "service-registry:8761", "--", "java", "-jar", "payment-service.jar"]
+    command: ["sh", "-c", "./wait-for-it.sh payment-postgres:5432 -- ./wait-for-it.sh service-registry:8761 -- java -jar payment-service.jar"]
+    networks:
+      - e2e-network
+
+  notification-postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: notificationdb
+      POSTGRES_USER: notification_service
+      POSTGRES_PASSWORD: notification_service
     networks:
       - e2e-network
 
@@ -131,9 +173,11 @@ services:
     depends_on:
       service-registry:
         condition: service_healthy
+      notification-postgres:
+        condition: service_started
     volumes:
       - ./scripts/wait-for-it.sh:/wait-for-it.sh
-    command: ["./wait-for-it.sh", "service-registry:8761", "--", "java", "-jar", "notification-service.jar"]
+    command: ["sh", "-c", "./wait-for-it.sh notification-postgres:5432 -- ./wait-for-it.sh service-registry:8761 -- java -jar notification-service.jar"]
     networks:
       - e2e-network
 

@@ -56,11 +56,6 @@ management:
           - info
           - prometheus
 
-# We don't run service-registry (Eureka) in Kubernetes: services communicate
-# exclusively via Kafka events (SAGA), and there's no api-gateway in this
-# cluster either, so there's no consumer of Eureka's service registry here.
-# Disabling the client entirely avoids useless retry/error logs trying to
-# reach a service-registry:8761 that doesn't exist in K8s.
 eureka:
   client:
     enabled: false

@@ -29,6 +29,10 @@ management:
           - prometheus
 server:
   port: 8082
+app:
+  security:
+    issuer-uri: http://localhost:8180/realms/payment-microservice
+    jwk-set-uri: http://localhost:8180/realms/payment-microservice/protocol/openid-connect/certs
 logging:
   pattern:
     level: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%X{traceId:-},%X{spanId:-}] %5p %c - %m%n"

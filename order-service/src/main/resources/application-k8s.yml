@@ -1,0 +1,103 @@
+spring:
+  application:
+    name: order-service
+  datasource:
+    # Bitnami postgresql chart names its Service "<release-name>-postgresql";
+    # our release is "order-postgres" (see k8s/postgres/order-postgres-values.yaml).
+    url: jdbc:postgresql://order-postgres-postgresql:5432/orderdb
+    driver-class-name: org.postgresql.Driver
+    username: order_service
+    password: order_service
+  jpa:
+    hibernate:
+      ddl-auto: none
+  kafka:
+    # Service name from the "kafka" Bitnami Kafka release (see k8s/kafka/kafka-values.yaml).
+    bootstrap-servers: kafka:9092
+    consumer:
+      group-id: order-service-group
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      max-poll-records: 1
+    listener:
+      ack-mode: record
+      concurrency: 1
+      missing-topics-fatal: false
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      retries: 3
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+
+server:
+  port: 8082
+
+app:
+  security:
+    # Same convention as client-service: the frontend/browser reaches Keycloak via a
+    # port-forward on localhost:8180, so tokens carry that as the issuer. Inside the
+    # cluster, this service fetches signing keys via Keycloak's internal Service DNS name.
+    issuer-uri: http://localhost:8180/realms/payment-microservice
+    jwk-set-uri: http://keycloak:8080/realms/payment-microservice/protocol/openid-connect/certs
+
+logging:
+  pattern:
+    level: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%X{traceId:-},%X{spanId:-}] %5p %c - %m%n"
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      # Same Service name as docker-compose's zipkin container (see k8s/zipkin/service.yaml).
+      endpoint: http://zipkin:9411/api/v2/spans
+  endpoints:
+    web:
+      exposure:
+        include:
+          - health
+          - info
+          - prometheus
+
+grpc:
+  server:
+    port: -1
+  client:
+    payment-service:
+      negotiation-type: plaintext
+      # net.devh's grpc-spring-boot-starter resolves "payment-service" via Eureka discovery
+      # by default. Since Eureka is disabled in k8s (see below), we point it directly at
+      # payment-service's in-cluster Service DNS + gRPC port instead.
+      address: static://payment-service:9090
+
+eureka:
+  client:
+    enabled: false
+
+resilience4j:
+  retry:
+    instances:
+      payment:
+        max-attempts: 3
+        wait-duration: 2s
+        retry-exceptions:
+          - io.grpc.StatusRuntimeException
+        ignore-exceptions:
+          - java.lang.IllegalArgumentException
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2.0
+
+order-service:
+  saga:
+    # How long a saga can sit in PAYMENT_REQUESTED before it's considered stuck
+    # (e.g. the payment-topic Kafka event never arrived) and gets compensated.
+    timeout-minutes: 5
+    # How often the timeout job scans for stuck sagas.
+    check-interval-ms: 60000
+    # Max compensation attempts before a saga is marked FAILED (terminal, needs
+    # manual intervention) instead of being retried forever.
+    max-compensation-retries: 3

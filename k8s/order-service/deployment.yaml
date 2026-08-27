@@ -1,0 +1,48 @@
+# order-service Deployment — same pattern as client-service (no service-registry/Eureka,
+# no api-gateway — see checkpoints for rationale: services only talk to each other via
+# Kafka events / direct gRPC calls, and there's no gateway deployed in-cluster).
+#
+# Apply with:
+#   kubectl apply -f k8s/order-service/deployment.yaml -f k8s/order-service/service.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-service
+  labels:
+    app: order-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: order-service
+  template:
+    metadata:
+      labels:
+        app: order-service
+    spec:
+      containers:
+        - name: order-service
+          image: payment-microservice-order-service:v1
+          # Built locally with `docker build` and pushed into minikube via
+          # `minikube image load` — never pulled from a registry.
+          # NOTE: use a unique tag per rebuild (v1, v2, ...) instead of reusing
+          # ":local" — minikube image load doesn't reliably overwrite a cached
+          # image under an unchanged tag while a pod is still referencing it.
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8082
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: k8s
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8082
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8082
+            initialDelaySeconds: 30
+            periodSeconds: 20

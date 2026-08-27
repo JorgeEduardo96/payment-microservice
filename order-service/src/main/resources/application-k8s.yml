@@ -72,7 +72,10 @@ grpc:
       # net.devh's grpc-spring-boot-starter resolves "payment-service" via Eureka discovery
       # by default. Since Eureka is disabled in k8s (see below), we point it directly at
       # payment-service's in-cluster Service DNS + gRPC port instead.
-      address: static://payment-service:9090
+      # NOTE: use "dns:///" (grpc-java's built-in DNS resolver), NOT "static://" — the
+      # static scheme only accepts literal IP addresses and throws
+      # "UNAVAILABLE: unresolved address" when given a hostname like a K8s Service name.
+      address: dns:///payment-service:9090
 
 eureka:
   client:

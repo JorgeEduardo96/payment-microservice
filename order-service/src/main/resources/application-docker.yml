@@ -2,17 +2,13 @@ spring:
   application:
     name: order-service
   datasource:
-    url: jdbc:h2:file:./data/orderdb
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
+    url: jdbc:postgresql://order-postgres:5432/orderdb
+    driver-class-name: org.postgresql.Driver
+    username: order_service
+    password: order_service
   jpa:
     hibernate:
       ddl-auto: none
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
   kafka:
     bootstrap-servers: kafka:9092
     consumer:
@@ -48,6 +44,13 @@ management:
           - prometheus
 server:
   port: 8082
+app:
+  security:
+    # The frontend/browser talks to Keycloak via localhost:8180, so tokens carry that as
+    # the issuer. Inside Docker, this service must fetch signing keys via the internal
+    # hostname instead — see SecurityConfig for how the two are reconciled.
+    issuer-uri: http://localhost:8180/realms/payment-microservice
+    jwk-set-uri: http://keycloak:8080/realms/payment-microservice/protocol/openid-connect/certs
 logging:
   pattern:
     level: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%X{traceId:-},%X{spanId:-}] %5p %c - %m%n"

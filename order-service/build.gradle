@@ -69,6 +69,8 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
 
     // Shared lib
     implementation 'br.com.sharedlib:shared-lib:1.0.3'
@@ -108,8 +110,11 @@ dependencies {
     implementation 'io.zipkin.reporter2:zipkin-reporter-brave'
     implementation 'io.micrometer:micrometer-registry-prometheus'
 
-    // H2
-    runtimeOnly 'com.h2database:h2'
+    // H2 (used by unit and integration tests only)
+    testRuntimeOnly 'com.h2database:h2'
+
+    // PostgreSQL (used at runtime — local dev and docker/k8s profiles)
+    runtimeOnly 'org.postgresql:postgresql'
 
     // Testing
     testImplementation 'org.springframework.boot:spring-boot-starter-test'

@@ -1,5 +1,5 @@
 CREATE TABLE outbox (
-    id CHAR(36) PRIMARY KEY,
+    id UUID PRIMARY KEY,
     aggregate_type VARCHAR(100) NOT NULL,
     aggregate_id CHAR(36) NOT NULL,
     event_type VARCHAR(255) NOT NULL,

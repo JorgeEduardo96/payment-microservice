@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: service-registry
+  labels:
+    app: service-registry
+spec:
+  # Only 1 replica: Eureka clients would need every replica to know about
+  # each other to be useful, and we're not solving that here — this is a
+  # learning exercise before Eureka gets removed entirely.
+  replicas: 1
+  selector:
+    matchLabels:
+      app: service-registry
+  template:
+    metadata:
+      labels:
+        app: service-registry
+    spec:
+      containers:
+        - name: service-registry
+          image: payment-microservice-service-registry:local
+          # "local" images built with `docker build` aren't in a real
+          # registry, so we tell the kubelet not to try to re-pull them —
+          # it must use the image already loaded into the node (e.g. via
+          # `minikube image load`).
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8761
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: docker
+          # /actuator/health backs both probes: readiness gates traffic
+          # (Service won't route to a pod still starting up), liveness
+          # restarts the pod if the app hangs.
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8761
+            initialDelaySeconds: 15
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8761
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "384Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"

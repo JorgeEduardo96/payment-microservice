@@ -1,0 +1,53 @@
+# payment-service Deployment — same pattern as client-service/order-service (no
+# service-registry/Eureka, no api-gateway). Unlike the others, payment-service has no
+# HTTP REST API of its own (only actuator over HTTP + a gRPC server on 9090), so there's
+# no JWT/security config needed here — order-service is the only consumer, calling it
+# directly via gRPC over the in-cluster Service DNS name.
+#
+# Apply with:
+#   kubectl apply -f k8s/payment-service/deployment.yaml -f k8s/payment-service/service.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-service
+  labels:
+    app: payment-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: payment-service
+  template:
+    metadata:
+      labels:
+        app: payment-service
+    spec:
+      containers:
+        - name: payment-service
+          image: payment-microservice-payment-service:v1
+          # Built locally with `docker build` and pushed into minikube via
+          # `minikube image load` — never pulled from a registry.
+          # NOTE: use a unique tag per rebuild (v1, v2, ...) instead of reusing
+          # ":local" — minikube image load doesn't reliably overwrite a cached
+          # image under an unchanged tag while a pod is still referencing it.
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8083
+              name: http
+            - containerPort: 9090
+              name: grpc
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: k8s
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8083
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8083
+            initialDelaySeconds: 30
+            periodSeconds: 20

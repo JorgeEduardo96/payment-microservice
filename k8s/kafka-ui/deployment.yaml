@@ -1,0 +1,46 @@
+# kafka-ui — same tool used in docker-compose (provectuslabs/kafka-ui), pointed
+# at our single-node KRaft Kafka release (see k8s/kafka/kafka-values.yaml).
+# No ZooKeeper config needed here: Kafka 4.x/KRaft mode has no ZooKeeper at all
+# (docker-compose's setup still uses one; K8s doesn't).
+#
+# Apply with:
+#   kubectl apply -f k8s/kafka-ui/deployment.yaml -f k8s/kafka-ui/service.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka-ui
+  labels:
+    app: kafka-ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka-ui
+  template:
+    metadata:
+      labels:
+        app: kafka-ui
+    spec:
+      containers:
+        - name: kafka-ui
+          image: provectuslabs/kafka-ui:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+          env:
+            - name: KAFKA_CLUSTERS_0_NAME
+              value: local
+            - name: KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS
+              value: kafka:9092
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 20

@@ -1,0 +1,54 @@
+# frontend Deployment — no service-registry/Eureka, no api-gateway (see checkpoints for
+# rationale). Uses the SAME image built for docker-compose, but overrides nginx's config
+# via a ConfigMap (see nginx-configmap.yaml) so it routes directly to each service's
+# in-cluster DNS name instead of api-gateway.
+#
+# Apply with:
+#   kubectl apply -f k8s/frontend/nginx-configmap.yaml -f k8s/frontend/deployment.yaml -f k8s/frontend/service.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  labels:
+    app: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: payment-microservice-frontend:v1
+          # Built locally with `docker build` and pushed into minikube via
+          # `minikube image load` — never pulled from a registry.
+          # NOTE: use a unique tag per rebuild (v1, v2, ...) instead of reusing
+          # ":local" — minikube image load doesn't reliably overwrite a cached
+          # image under an unchanged tag while a pod is still referencing it.
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/conf.d/default.conf
+              subPath: default.conf
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 20
+      volumes:
+        - name: nginx-config
+          configMap:
+            name: frontend-nginx-config

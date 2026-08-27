@@ -1,0 +1,21 @@
+# Bitnami PostgreSQL chart values for payment-service's database.
+# Install with:
+#   helm install payment-postgres bitnami/postgresql -f k8s/postgres/payment-postgres-values.yaml --version 18.8.13
+#
+# NOTE: we do NOT pin image.tag — see order-postgres-values.yaml for why
+# (Bitnami free tier only ships "latest" now; our SQL is plain ANSI so the
+# Postgres major version doesn't matter here).
+
+auth:
+  username: payment_service
+  password: payment_service
+  database: paymentdb
+  postgresPassword: postgres
+
+primary:
+  persistence:
+    size: 1Gi
+  resourcesPreset: "nano"
+
+readReplicas:
+  replicaCount: 0

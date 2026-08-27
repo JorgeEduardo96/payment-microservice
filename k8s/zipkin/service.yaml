@@ -1,0 +1,22 @@
+# NodePort Service exposing Zipkin both:
+#  - internally, as zipkin.default.svc.cluster.local:9411 — the DNS name our
+#    microservices (Sleuth/Micrometer Tracing) will use once they're
+#    deployed to the cluster in a later phase.
+#  - externally, via the node's IP + an assigned NodePort, so it can be
+#    opened from a browser on the host machine. On minikube, the easiest
+#    way to open it is:
+#      minikube service zipkin
+apiVersion: v1
+kind: Service
+metadata:
+  name: zipkin
+  labels:
+    app: zipkin
+spec:
+  type: NodePort
+  selector:
+    app: zipkin
+  ports:
+    - port: 9411
+      targetPort: 9411
+      name: http

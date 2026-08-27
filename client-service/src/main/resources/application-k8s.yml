@@ -1,0 +1,84 @@
+spring:
+  application:
+    name: client-service
+  datasource:
+    # Bitnami postgresql chart names its Service "<release-name>-postgresql";
+    # our release is "client-postgres" (see k8s/postgres/client-postgres-values.yaml).
+    url: jdbc:postgresql://client-postgres-postgresql:5432/clientdb
+    driver-class-name: org.postgresql.Driver
+    username: client_service
+    password: client_service
+  jpa:
+    hibernate:
+      ddl-auto: none
+  kafka:
+    # Service name from the "kafka" Bitnami Kafka release (see k8s/kafka/kafka-values.yaml).
+    bootstrap-servers: kafka:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.add.type.headers: false
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+
+server:
+  port: 8081
+
+app:
+  security:
+    # Same convention as docker-compose: the frontend/browser is expected to reach Keycloak
+    # via a port-forward on localhost:8180 (see k8s/keycloak/service.yaml + port-forward
+    # instructions), so tokens carry that as the issuer. Inside the cluster, this service
+    # fetches signing keys via Keycloak's internal Service DNS name instead.
+    issuer-uri: http://localhost:8180/realms/payment-microservice
+    jwk-set-uri: http://keycloak:8080/realms/payment-microservice/protocol/openid-connect/certs
+
+logging:
+  pattern:
+    level: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%X{traceId:-},%X{spanId:-}] %5p %c - %m%n"
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+    propagation:
+      type: b3
+  zipkin:
+    tracing:
+      # Same Service name as docker-compose's zipkin container (see k8s/zipkin/service.yaml).
+      endpoint: http://zipkin:9411/api/v2/spans
+  endpoints:
+    web:
+      exposure:
+        include:
+          - health
+          - info
+          - prometheus
+
+eureka:
+  client:
+    enabled: false
+
+client-service:
+  outbox:
+    retry-delay-ms: 43200000
+  keycloak:
+    # Same Service name as docker-compose's keycloak container (see k8s/keycloak/service.yaml).
+    token-uri: http://keycloak:8080/realms/payment-microservice/protocol/openid-connect/token
+    admin-base-uri: http://keycloak:8080/admin/realms/payment-microservice
+    client-id: client-service
+    client-secret: client-service-secret
+    default-password: client123
+    client-role-name: CLIENT
+
+resilience4j:
+  retry:
+    instances:
+      defaultProducerRetry:
+        max-attempts: 3
+        wait-duration: 1000ms
+        retry-exceptions:
+          - java.io.IOException
+          - com.fasterxml.jackson.core.JsonProcessingException
+          - org.springframework.dao.DataAccessException

@@ -1,0 +1,21 @@
+# ClusterIP (not NodePort): payment-service has no HTTP REST API meant for external/FE
+# access — its only consumer is order-service, calling it internally via gRPC using this
+# Service's DNS name (payment-service.default.svc.cluster.local:9090). The HTTP port is
+# exposed only for actuator/Prometheus scraping, also internal-only.
+apiVersion: v1
+kind: Service
+metadata:
+  name: payment-service
+  labels:
+    app: payment-service
+spec:
+  type: ClusterIP
+  selector:
+    app: payment-service
+  ports:
+    - port: 8083
+      targetPort: 8083
+      name: http
+    - port: 9090
+      targetPort: 9090
+      name: grpc

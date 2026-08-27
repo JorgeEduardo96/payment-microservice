@@ -1,0 +1,32 @@
+# grafana/grafana chart values — mirrors docker-compose's admin/admin
+# credentials, plus auto-provisions Prometheus as a datasource so we don't
+# have to click through the UI to wire it up manually.
+#
+# Install with:
+#   helm install grafana grafana/grafana -f k8s/grafana/grafana-values.yaml
+
+adminUser: admin
+adminPassword: admin
+
+persistence:
+  enabled: true
+  size: 1Gi
+
+# NodePort so the Grafana UI is reachable from the browser on the host via
+# `minikube service grafana`, not just from inside the cluster (default is
+# ClusterIP).
+service:
+  type: NodePort
+
+# Auto-provision the Prometheus datasource pointing at the
+# "prometheus-server" Service created by the prometheus-community/prometheus
+# chart release named "prometheus" — avoids manually adding it via the UI.
+datasources:
+  datasources.yaml:
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        url: http://prometheus-server.default.svc.cluster.local
+        access: proxy
+        isDefault: true

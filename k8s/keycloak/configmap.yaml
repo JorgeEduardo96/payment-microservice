@@ -1,0 +1,63 @@
+# Auto-generated from keycloak/realm-export.json via:
+#   kubectl create configmap keycloak-realm-config --from-file=realm-export.json=keycloak/realm-export.json --dry-run=client -o yaml
+# Regenerate this file if keycloak/realm-export.json changes.
+apiVersion: v1
+data:
+  realm-export.json: "{\r\n  \"realm\": \"payment-microservice\",\r\n  \"enabled\":
+    true,\r\n  \"sslRequired\": \"none\",\r\n  \"registrationAllowed\": false,\r\n
+    \ \"loginWithEmailAllowed\": true,\r\n  \"accessTokenLifespan\": 300,\r\n  \"ssoSessionIdleTimeout\":
+    1800,\r\n  \"components\": {\r\n    \"org.keycloak.userprofile.UserProfileProvider\":
+    [\r\n      {\r\n        \"providerId\": \"declarative-user-profile\",\r\n        \"config\":
+    {\r\n          \"kc.user.profile.config\": [\r\n            \"{\\\"attributes\\\":[{\\\"name\\\":\\\"username\\\",\\\"permissions\\\":{\\\"view\\\":[\\\"admin\\\",\\\"user\\\"],\\\"edit\\\":[\\\"admin\\\",\\\"user\\\"]},\\\"multivalued\\\":false},{\\\"name\\\":\\\"email\\\",\\\"permissions\\\":{\\\"view\\\":[\\\"admin\\\",\\\"user\\\"],\\\"edit\\\":[\\\"admin\\\",\\\"user\\\"]},\\\"multivalued\\\":false},{\\\"name\\\":\\\"firstName\\\",\\\"permissions\\\":{\\\"view\\\":[\\\"admin\\\",\\\"user\\\"],\\\"edit\\\":[\\\"admin\\\",\\\"user\\\"]},\\\"multivalued\\\":false},{\\\"name\\\":\\\"lastName\\\",\\\"permissions\\\":{\\\"view\\\":[\\\"admin\\\",\\\"user\\\"],\\\"edit\\\":[\\\"admin\\\",\\\"user\\\"]},\\\"multivalued\\\":false},{\\\"name\\\":\\\"clientId\\\",\\\"displayName\\\":\\\"Client
+    business entity id\\\",\\\"permissions\\\":{\\\"view\\\":[\\\"admin\\\"],\\\"edit\\\":[\\\"admin\\\"]},\\\"multivalued\\\":false}],\\\"groups\\\":[{\\\"name\\\":\\\"user-metadata\\\",\\\"displayHeader\\\":\\\"User
+    metadata\\\",\\\"displayDescription\\\":\\\"Attributes, which refer to user metadata\\\"}]}\"\r\n
+    \         ]\r\n        }\r\n      }\r\n    ]\r\n  },\r\n  \"roles\": {\r\n    \"realm\":
+    [\r\n      {\r\n        \"name\": \"USER\",\r\n        \"description\": \"Regular
+    application user\"\r\n      },\r\n      {\r\n        \"name\": \"ADMIN\",\r\n
+    \       \"description\": \"Administrative user\"\r\n      },\r\n      {\r\n        \"name\":
+    \"CLIENT\",\r\n        \"description\": \"Registered customer (Client business
+    entity)\"\r\n      }\r\n    ]\r\n  },\r\n  \"clients\": [\r\n    {\r\n      \"clientId\":
+    \"frontend\",\r\n      \"name\": \"Payment Microservice Frontend\",\r\n      \"enabled\":
+    true,\r\n      \"publicClient\": true,\r\n      \"protocol\": \"openid-connect\",\r\n
+    \     \"standardFlowEnabled\": true,\r\n      \"implicitFlowEnabled\": false,\r\n
+    \     \"directAccessGrantsEnabled\": false,\r\n      \"serviceAccountsEnabled\":
+    false,\r\n      \"redirectUris\": [\r\n        \"http://localhost:8000/*\"\r\n
+    \     ],\r\n      \"webOrigins\": [\r\n        \"http://localhost:8000\"\r\n      ],\r\n
+    \     \"attributes\": {\r\n        \"pkce.code.challenge.method\": \"S256\",\r\n
+    \       \"post.logout.redirect.uris\": \"http://localhost:8000/*\"\r\n      },\r\n
+    \     \"protocolMappers\": [\r\n        {\r\n          \"name\": \"client-id-mapper\",\r\n
+    \         \"protocol\": \"openid-connect\",\r\n          \"protocolMapper\": \"oidc-usermodel-attribute-mapper\",\r\n
+    \         \"consentRequired\": false,\r\n          \"config\": {\r\n            \"user.attribute\":
+    \"clientId\",\r\n            \"claim.name\": \"clientId\",\r\n            \"jsonType.label\":
+    \"String\",\r\n            \"id.token.claim\": \"true\",\r\n            \"access.token.claim\":
+    \"true\",\r\n            \"userinfo.token.claim\": \"true\"\r\n          }\r\n
+    \       }\r\n      ]\r\n    },\r\n    {\r\n      \"clientId\": \"client-service\",\r\n
+    \     \"name\": \"client-service\",\r\n      \"enabled\": true,\r\n      \"clientAuthenticatorType\":
+    \"client-secret\",\r\n      \"secret\": \"client-service-secret\",\r\n      \"publicClient\":
+    false,\r\n      \"protocol\": \"openid-connect\",\r\n      \"standardFlowEnabled\":
+    false,\r\n      \"implicitFlowEnabled\": false,\r\n      \"directAccessGrantsEnabled\":
+    false,\r\n      \"serviceAccountsEnabled\": true\r\n    }\r\n  ],\r\n  \"users\":
+    [\r\n    {\r\n      \"username\": \"service-account-client-service\",\r\n      \"enabled\":
+    true,\r\n      \"serviceAccountClientId\": \"client-service\",\r\n      \"clientRoles\":
+    {\r\n        \"realm-management\": [\"manage-users\", \"view-realm\"]\r\n      }\r\n
+    \   },\r\n    {\r\n      \"username\": \"admin\",\r\n      \"enabled\": true,\r\n
+    \     \"emailVerified\": true,\r\n      \"email\": \"admin@payment-microservice.local\",\r\n
+    \     \"firstName\": \"Administrator\",\r\n      \"lastName\": \"User\",\r\n      \"credentials\":
+    [\r\n        {\r\n          \"type\": \"password\",\r\n          \"value\": \"admin123\",\r\n
+    \         \"temporary\": false\r\n        }\r\n      ],\r\n      \"realmRoles\":
+    [\r\n        \"ADMIN\",\r\n        \"USER\"\r\n      ]\r\n    },\r\n    {\r\n
+    \     \"username\": \"admin.2\",\r\n      \"enabled\": true,\r\n      \"emailVerified\":
+    true,\r\n      \"email\": \"admin2@payment-microservice.local\",\r\n      \"firstName\":
+    \"Administrator 2\",\r\n      \"lastName\": \"User\",\r\n      \"credentials\":
+    [\r\n        {\r\n          \"type\": \"password\",\r\n          \"value\": \"admin123\",\r\n
+    \         \"temporary\": false\r\n        }\r\n      ],\r\n      \"realmRoles\":
+    [\r\n        \"ADMIN\",\r\n        \"USER\"\r\n      ]\r\n    },\r\n    {\r\n
+    \     \"username\": \"demo\",\r\n      \"enabled\": true,\r\n      \"emailVerified\":
+    true,\r\n      \"email\": \"demo@payment-microservice.local\",\r\n      \"firstName\":
+    \"Demo\",\r\n      \"lastName\": \"User\",\r\n      \"credentials\": [\r\n        {\r\n
+    \         \"type\": \"password\",\r\n          \"value\": \"demo123\",\r\n          \"temporary\":
+    false\r\n        }\r\n      ],\r\n      \"realmRoles\": [\r\n        \"USER\"\r\n
+    \     ]\r\n    }\r\n  ]\r\n}\r\n"
+kind: ConfigMap
+metadata:
+  name: keycloak-realm-config

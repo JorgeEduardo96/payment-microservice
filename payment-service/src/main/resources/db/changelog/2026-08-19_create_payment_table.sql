@@ -1,7 +1,7 @@
 CREATE TABLE payment (
-    id CHAR(36) PRIMARY KEY,
-    order_id CHAR(36) NOT NULL,
-    client_id CHAR(36) NOT NULL,
+    id UUID PRIMARY KEY,
+    order_id UUID NOT NULL,
+    client_id UUID NOT NULL,
     payment_method VARCHAR(100) NOT NULL,
     status VARCHAR(50) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP

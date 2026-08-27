@@ -1,0 +1,21 @@
+# Bitnami PostgreSQL chart values for notification-service's database.
+# Install with:
+#   helm install notification-postgres bitnami/postgresql -f k8s/postgres/notification-postgres-values.yaml --version 18.8.13
+#
+# NOTE: we do NOT pin image.tag — see order-postgres-values.yaml for why
+# (Bitnami free tier only ships "latest" now; our SQL is plain ANSI so the
+# Postgres major version doesn't matter here).
+
+auth:
+  username: notification_service
+  password: notification_service
+  database: notificationdb
+  postgresPassword: postgres
+
+primary:
+  persistence:
+    size: 1Gi
+  resourcesPreset: "nano"
+
+readReplicas:
+  replicaCount: 0

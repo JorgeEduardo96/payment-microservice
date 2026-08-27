@@ -1,0 +1,55 @@
+# prometheus-community/prometheus chart values — mirrors what we already
+# have in docker-compose (bare Prometheus server, no Alertmanager/exporters),
+# scraping the 4 microservices' /actuator/prometheus endpoints.
+#
+# Install with:
+#   helm install prometheus prometheus-community/prometheus -f k8s/prometheus/prometheus-values.yaml
+
+# We don't use alerting or the extra exporter sidecars in docker-compose
+# either — keep this a lean, single Prometheus server for now to save
+# resources on the local minikube node.
+alertmanager:
+  enabled: false
+kube-state-metrics:
+  enabled: false
+prometheus-node-exporter:
+  enabled: false
+prometheus-pushgateway:
+  enabled: false
+
+server:
+  image:
+    # Explicit tag (matches what we pulled + preloaded into minikube) instead
+    # of leaving the chart default ("" → falls back to appVersion), so we
+    # know exactly which image minikube already has cached locally.
+    tag: "v3.6.0"
+  persistentVolume:
+    size: 1Gi
+  # NodePort so the Prometheus UI is reachable from the browser on the host
+  # via `minikube service prometheus-server`, not just from inside the
+  # cluster (default is ClusterIP).
+  service:
+    type: NodePort
+
+# Scrape configs for our 4 microservices' Spring Boot Actuator/Micrometer
+# endpoints. These target names (client-service, order-service, etc.) are
+# the K8s Service DNS names we'll create for the actual microservices in a
+# later migration phase — until then these targets will simply show as
+# "down" in Prometheus, which is expected at this stage (infra-only).
+extraScrapeConfigs: |
+  - job_name: 'client-service'
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['client-service.default.svc.cluster.local:8081']
+  - job_name: 'order-service'
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['order-service.default.svc.cluster.local:8082']
+  - job_name: 'payment-service'
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['payment-service.default.svc.cluster.local:8083']
+  - job_name: 'notification-service'
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['notification-service.default.svc.cluster.local:8084']

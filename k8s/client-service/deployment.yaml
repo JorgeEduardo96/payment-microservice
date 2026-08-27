@@ -1,0 +1,50 @@
+# client-service Deployment — pilot for migrating the real microservices to
+# Kubernetes (no service-registry/Eureka, no api-gateway — see checkpoints
+# for rationale: services only talk to each other via Kafka events, and
+# there's no gateway deployed in-cluster).
+#
+# Apply with:
+#   kubectl apply -f k8s/client-service/deployment.yaml -f k8s/client-service/service.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: client-service
+  labels:
+    app: client-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: client-service
+  template:
+    metadata:
+      labels:
+        app: client-service
+    spec:
+      containers:
+        - name: client-service
+          image: payment-microservice-client-service:v2
+          # Built locally with `docker build` and pushed into minikube via
+          # `minikube image load` — never pulled from a registry.
+          # NOTE: use a unique tag per rebuild (v2, v3, ...) instead of reusing
+          # ":local" — minikube image load doesn't reliably overwrite a cached
+          # image under an unchanged tag while a pod is still referencing it,
+          # which caused a stale-image bug earlier in this migration.
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8081
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: k8s
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8081
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8081
+            initialDelaySeconds: 30
+            periodSeconds: 20

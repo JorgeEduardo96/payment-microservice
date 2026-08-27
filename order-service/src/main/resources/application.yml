@@ -4,17 +4,13 @@ spring:
   kafka:
     bootstrap-servers: localhost:19092
   datasource:
-    url: jdbc:h2:file:./data/orderdb
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
+    url: jdbc:postgresql://localhost:5433/orderdb
+    driver-class-name: org.postgresql.Driver
+    username: order_service
+    password: order_service
   jpa:
     hibernate:
       ddl-auto: none
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
   liquibase:
     change-log: classpath:db/changelog/db.changelog-master.yaml
 management:
@@ -33,6 +29,10 @@ management:
           - prometheus
 server:
   port: 8082
+app:
+  security:
+    issuer-uri: http://localhost:8180/realms/payment-microservice
+    jwk-set-uri: http://localhost:8180/realms/payment-microservice/protocol/openid-connect/certs
 logging:
   pattern:
     level: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%X{traceId:-},%X{spanId:-}] %5p %c - %m%n"

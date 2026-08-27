@@ -2,17 +2,13 @@ spring:
   application:
     name: client-service
   datasource:
-    url: jdbc:h2:file:./data/clientdb
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
+    url: jdbc:postgresql://client-postgres:5432/clientdb
+    driver-class-name: org.postgresql.Driver
+    username: client_service
+    password: client_service
   jpa:
     hibernate:
       ddl-auto: none
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
   kafka:
     bootstrap-servers: kafka:9092
     producer:
@@ -25,6 +21,14 @@ spring:
 
 server:
   port: 8081
+
+app:
+  security:
+    # The frontend/browser talks to Keycloak via localhost:8180, so tokens carry that as
+    # the issuer. Inside Docker, this service must fetch signing keys via the internal
+    # hostname instead — see SecurityConfig for how the two are reconciled.
+    issuer-uri: http://localhost:8180/realms/payment-microservice
+    jwk-set-uri: http://keycloak:8080/realms/payment-microservice/protocol/openid-connect/certs
 
 logging:
   pattern:

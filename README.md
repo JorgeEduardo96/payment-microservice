@@ -232,6 +232,7 @@ The frontend supports **English, Portuguese, and Spanish** via `vue-i18n`.
     - **Zipkin** (distributed tracing).
     - **Prometheus + Grafana** (metrics and dashboards).
 - Docker containers orchestrated via `docker compose`.
+- Also deployable to **Kubernetes** (Minikube) without Eureka/API Gateway — see [Kubernetes (Minikube)](#kubernetes-minikube).
 - CI with **GitHub Actions** — build, E2E tests, and push on the `main` branch.
 - **Eureka** for service discovery.
 - Global validations and standardized exception handling.
@@ -255,7 +256,8 @@ payment-microservice/
 ├── e2e-tests/             # End-to-end tests (REST API, full stack)
 ├── e2e-browser-tests/     # End-to-end tests (real browser via Playwright, full stack)
 ├── docker-compose.yml     # Full stack with observability tools
-└── docker-compose-e2e.yml # Lightweight stack (incl. frontend) for both E2E modules
+├── docker-compose-e2e.yml # Lightweight stack (incl. frontend) for both E2E modules
+└── k8s/                   # Kubernetes manifests/Helm values (Minikube) — see Kubernetes section below
 ```
 
 ---
@@ -416,6 +418,90 @@ CI (Linux) always uses the bundled Chromium.
 
    Registering a client from the app (as `admin`) also creates a matching Keycloak login for that client
    (username = the client's email, password `client123`, role `CLIENT`).
+
+---
+
+## Kubernetes (Minikube)
+
+In addition to `docker compose`, the full stack can also run on a local **Kubernetes** cluster (tested with
+**Minikube**), under `k8s/`. This deployment intentionally drops two pieces of infrastructure that only make sense in a
+Docker-Compose-style, service-discovery-less network:
+
+- **No Eureka / service-registry** — Kubernetes' own Service DNS (`<service-name>.<namespace>.svc.cluster.local`)
+  replaces client-side service discovery. Each service's `application-k8s.yml` profile points directly at the other
+  services' Kubernetes Service names instead of registering with Eureka.
+- **No API Gateway** — each backend service now validates JWTs **itself** (via its own Spring Security
+  `SecurityConfig`, resource-server style) instead of relying on the gateway to do it centrally. `notification-service`
+  already did this at the STOMP `CONNECT` frame; `client-service` and `order-service` gained their own `SecurityConfig`
+  for this migration. The frontend's `nginx` calls each service's Kubernetes Service directly (see
+  `k8s/frontend/nginx-configmap.yaml`) instead of going through `api-gateway:8080`.
+
+### Structure
+
+```
+k8s/
+├── postgres/                # One Bitnami Helm values file per service's own Postgres instance (Database per Service)
+├── kafka/                   # Bitnami Kafka Helm values
+├── kafka-ui/                # Kafka UI Deployment/Service (NodePort)
+├── keycloak/                # Keycloak Deployment/Service/ConfigMap (realm import)
+├── zipkin/                  # Zipkin Deployment/Service
+├── prometheus/              # Prometheus Helm values
+├── grafana/                 # Grafana Helm values
+├── client-service/           # Deployment/Service (NodePort) — has its own SecurityConfig
+├── order-service/            # Deployment/Service (NodePort) — has its own SecurityConfig, gRPC client uses dns:///
+├── payment-service/          # Deployment/Service (ClusterIP-only — no HTTP API, gRPC + Kafka only)
+├── notification-service/     # Deployment/Service (NodePort — direct WebSocket access, no gateway to proxy it)
+└── frontend/                 # Deployment/Service (NodePort) + ConfigMap overriding nginx's routing for in-cluster DNS
+```
+
+### Key differences from `docker-compose.yml`
+
+- Each service has its own `application-k8s.yml` Spring profile (Postgres/Kafka Service DNS names, Eureka disabled).
+- `order-service`'s gRPC client to `payment-service` uses the `dns:///payment-service:9090` URI scheme, **not**
+  `static://` — the latter only accepts literal IPs and does not resolve hostnames, which breaks against Kubernetes
+  Service DNS names.
+- The frontend's `nginx.conf` is unchanged (still bakes in the `api-gateway`-based routing used by `docker compose`,
+  so the same Docker image serves both environments). Its Kubernetes-specific routing (direct calls to
+  `client-service`, `order-service`, `notification-service`, no gateway) lives in a `ConfigMap`
+  (`k8s/frontend/nginx-configmap.yaml`) mounted over `/etc/nginx/conf.d/default.conf` at runtime.
+  - `nginx`'s `resolver` directive does **not** honor `/etc/resolv.conf`'s `search` domains the way a normal libc
+    resolver does, so the ConfigMap uses fully-qualified Service names
+    (e.g. `client-service.default.svc.cluster.local`) rather than short names.
+
+### Running it
+
+```bash
+minikube start
+
+# Build and load each service's image (repeat per service, bump the tag on every rebuild,
+# e.g. :v1 -> :v2, instead of reusing a tag — `minikube image load` doesn't reliably
+# refresh a cached image under an unchanged tag):
+./gradlew :client-service:build -x test -x integrationTest
+docker build -t payment-microservice-client-service:v1 client-service/
+minikube image load payment-microservice-client-service:v1
+# ...repeat for order-service, payment-service, notification-service, frontend
+
+# Apply infra first (Postgres instances, Kafka, Keycloak, Zipkin, Prometheus/Grafana, Kafka UI),
+# then the application services, then the frontend:
+kubectl apply -f k8s/postgres/ -f k8s/kafka/ -f k8s/keycloak/ -f k8s/zipkin/ \
+              -f k8s/prometheus/ -f k8s/grafana/ -f k8s/kafka-ui/
+kubectl apply -f k8s/client-service/ -f k8s/order-service/ -f k8s/payment-service/ \
+              -f k8s/notification-service/
+kubectl apply -f k8s/frontend/nginx-configmap.yaml -f k8s/frontend/deployment.yaml -f k8s/frontend/service.yaml
+```
+
+Minikube's Docker driver doesn't expose `NodePort`s on the host directly — reach each service with
+`kubectl port-forward`:
+
+| Service      | Command                                     | URL                     |
+|--------------|----------------------------------------------|-------------------------|
+| Frontend     | `kubectl port-forward svc/frontend 8000:80`   | http://localhost:8000   |
+| Keycloak     | `kubectl port-forward svc/keycloak 8180:8080` | http://localhost:8180   |
+| Kafka UI     | `kubectl port-forward svc/kafka-ui 8085:8080` | http://localhost:8085   |
+| Grafana      | `kubectl port-forward svc/grafana 3000:80`    | http://localhost:3000   |
+
+`client-service`, `order-service`, and `notification-service` can also be port-forwarded individually for direct
+API/WebSocket testing, but normally the frontend is the single entry point a browser needs.
 
 ---
 

@@ -1,0 +1,50 @@
+# notification-service Deployment — same pattern as the other services (no
+# service-registry/Eureka, no api-gateway). This service already validates JWTs itself
+# at the STOMP CONNECT frame level (see StompAuthChannelInterceptor), independently of
+# api-gateway, so there's no security gap to close here like there was for
+# client-service/order-service.
+#
+# Apply with:
+#   kubectl apply -f k8s/notification-service/deployment.yaml -f k8s/notification-service/service.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-service
+  labels:
+    app: notification-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notification-service
+  template:
+    metadata:
+      labels:
+        app: notification-service
+    spec:
+      containers:
+        - name: notification-service
+          image: payment-microservice-notification-service:v1
+          # Built locally with `docker build` and pushed into minikube via
+          # `minikube image load` — never pulled from a registry.
+          # NOTE: use a unique tag per rebuild (v1, v2, ...) instead of reusing
+          # ":local" — minikube image load doesn't reliably overwrite a cached
+          # image under an unchanged tag while a pod is still referencing it.
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8084
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: k8s
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8084
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8084
+            initialDelaySeconds: 30
+            periodSeconds: 20

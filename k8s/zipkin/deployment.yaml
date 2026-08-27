@@ -1,0 +1,44 @@
+# Zipkin has no official Helm chart (Bitnami never packaged it), and it's a
+# single stateless container with in-memory trace storage by default — so a
+# plain Deployment + Service is simpler than pulling in a community chart.
+#
+# Apply with:
+#   kubectl apply -f k8s/zipkin/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zipkin
+  labels:
+    app: zipkin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zipkin
+  template:
+    metadata:
+      labels:
+        app: zipkin
+    spec:
+      containers:
+        - name: zipkin
+          image: openzipkin/zipkin:latest
+          # Image is pre-loaded into minikube via `minikube image load`
+          # (see README/checkpoints) because pulling straight from the
+          # cluster runs into TLS trust issues in this environment.
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 9411
+          # Zipkin's own health endpoint used for both probes.
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 9411
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 9411
+            initialDelaySeconds: 20
+            periodSeconds: 20

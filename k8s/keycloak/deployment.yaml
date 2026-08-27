@@ -1,0 +1,67 @@
+# Keycloak has no official Helm chart from Bitnami on the free tier anymore
+# either, and our usage is simple (single dev-mode instance, H2 file storage,
+# realm imported from a fixed JSON) — a plain Deployment is enough here,
+# mirroring the docker-compose "keycloak" service.
+#
+# Apply with (configmap first):
+#   kubectl apply -f k8s/keycloak/configmap.yaml -f k8s/keycloak/deployment.yaml -f k8s/keycloak/service.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak
+  labels:
+    app: keycloak
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: keycloak
+  template:
+    metadata:
+      labels:
+        app: keycloak
+    spec:
+      containers:
+        - name: keycloak
+          image: quay.io/keycloak/keycloak:26.0
+          # Image is pre-loaded into minikube via `minikube image load` (see
+          # README/checkpoints) to avoid TLS trust issues pulling directly
+          # from inside the cluster.
+          imagePullPolicy: Never
+          args: ["start-dev", "--import-realm"]
+          env:
+            - name: KEYCLOAK_ADMIN
+              value: admin
+            - name: KEYCLOAK_ADMIN_PASSWORD
+              value: admin
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: realm-config
+              mountPath: /opt/keycloak/data/import/realm-export.json
+              subPath: realm-export.json
+            # H2 dev-mode storage — ephemeral is fine here (same as
+            # docker-compose's throwaway learning setup; data resets when the
+            # pod restarts, and the realm is re-imported from the ConfigMap
+            # every time anyway).
+            - name: keycloak-data
+              mountPath: /opt/keycloak/data/h2
+          readinessProbe:
+            httpGet:
+              path: /realms/payment-microservice
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 10
+          livenessProbe:
+            httpGet:
+              path: /realms/payment-microservice
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 20
+      volumes:
+        - name: realm-config
+          configMap:
+            name: keycloak-realm-config
+        - name: keycloak-data
+          emptyDir: {}

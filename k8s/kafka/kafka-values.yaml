@@ -1,0 +1,60 @@
+# Bitnami Kafka chart values — single-node KRaft cluster (no ZooKeeper) for
+# local learning purposes on minikube.
+#
+# Install with:
+#   helm install kafka bitnami/kafka -f k8s/kafka/kafka-values.yaml --version 32.4.3
+#
+# Design notes:
+# - Kafka 4.x with this chart runs in KRaft mode by default (no ZooKeeper
+#   needed at all — simpler than our docker-compose setup, which still uses
+#   confluentinc/cp-zookeeper + cp-kafka 7.6). This is a good opportunity to
+#   modernize while migrating to K8s.
+# - The chart defaults every listener (client/controller/interbroker/external)
+#   to SASL_PLAINTEXT, which would require configuring SASL users/passwords.
+#   Our services don't do Kafka auth today (docker-compose uses plain
+#   PLAINTEXT), so we override every listener back to PLAINTEXT to keep
+#   parity and avoid adding unrelated complexity.
+# - controller.replicaCount: 1 means a single pod acts as BOTH controller and
+#   broker (combined mode) — the default of 3 dedicated controllers is
+#   overkill for a local single-node learning cluster.
+
+# Bitnami moved this image out of the free "bitnami/" Docker Hub namespace
+# (same story as the postgresql chart — see k8s/postgres/order-postgres-values.yaml).
+# "bitnamilegacy/kafka" still serves the exact same tag for free.
+image:
+  repository: bitnamilegacy/kafka
+  tag: 4.0.0-debian-12-r10
+
+listeners:
+  client:
+    protocol: PLAINTEXT
+  controller:
+    protocol: PLAINTEXT
+  interbroker:
+    protocol: PLAINTEXT
+  external:
+    protocol: PLAINTEXT
+
+controller:
+  replicaCount: 1
+  persistence:
+    size: 2Gi
+  resourcesPreset: "small"
+
+# Single-node cluster: Kafka's internal __consumer_offsets/__transaction_state
+# topics default to replication-factor 3, which can never satisfy auto-creation
+# with only 1 broker — consumer groups would hang/timeout trying to commit
+# offsets. Force replication factor 1 (and min-isr 1) to match our single node.
+# NOTE: must use "overrideConfiguration" (merged on top of the chart's
+# auto-generated config) rather than "config"/"controller.config" (which
+# REPLACES the entire generated config, including listeners) — and it must be
+# real YAML (key: value), not Java properties syntax (key=value).
+overrideConfiguration:
+  offsets.topic.replication.factor: 1
+  transaction.state.log.replication.factor: 1
+  transaction.state.log.min.isr: 1
+
+# Dedicated broker-only nodes are not needed; the single controller node
+# above also acts as broker.
+broker:
+  replicaCount: 0

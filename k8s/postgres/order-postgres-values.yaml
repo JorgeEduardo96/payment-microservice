@@ -1,0 +1,30 @@
+# Bitnami PostgreSQL chart values for order-service's database.
+# Install with:
+#   helm install order-postgres bitnami/postgresql -f k8s/postgres/order-postgres-values.yaml --version 18.8.13
+#
+# NOTE: we do NOT pin image.tag here. Bitnami stopped publishing simple
+# major-version tags (e.g. "16") for their free/public images — only the
+# current major version ships under normal tags now (older majors moved to
+# a paid "bitnamisecure" tier). Our migrations use plain ANSI SQL (UUID,
+# VARCHAR, TIMESTAMP), so whatever Postgres major version this chart
+# defaults to is fine for this learning setup.
+auth:
+  username: order_service
+  password: order_service
+  database: orderdb
+  # We don't need the superuser ("postgres") password for this exercise,
+  # but the chart requires setting *something* when auth is enabled.
+  postgresPassword: postgres
+
+primary:
+  persistence:
+    # Default is 8Gi; way more than a learning DB needs and slower to
+    # provision on a local cluster.
+    size: 1Gi
+  # "nano" preset keeps CPU/memory requests small enough to comfortably fit
+  # several of these side-by-side on a local minikube node.
+  resourcesPreset: "nano"
+
+# We don't need read replicas for a single-writer learning setup.
+readReplicas:
+  replicaCount: 0

@@ -2,7 +2,9 @@ spring:
   application:
     name: client-service
   datasource:
-    url: jdbc:postgresql://client-postgres:5432/clientdb
+    # Bitnami postgresql chart names its Service "<release-name>-postgresql";
+    # our release is "client-postgres" (see k8s/postgres/client-postgres-values.yaml).
+    url: jdbc:postgresql://client-postgres-postgresql:5432/clientdb
     driver-class-name: org.postgresql.Driver
     username: client_service
     password: client_service
@@ -10,6 +12,7 @@ spring:
     hibernate:
       ddl-auto: none
   kafka:
+    # Service name from the "kafka" Bitnami Kafka release (see k8s/kafka/kafka-values.yaml).
     bootstrap-servers: kafka:9092
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
@@ -24,9 +27,10 @@ server:
 
 app:
   security:
-    # The frontend/browser talks to Keycloak via localhost:8180, so tokens carry that as
-    # the issuer. Inside Docker, this service must fetch signing keys via the internal
-    # hostname instead — see SecurityConfig for how the two are reconciled.
+    # Same convention as docker-compose: the frontend/browser is expected to reach Keycloak
+    # via a port-forward on localhost:8180 (see k8s/keycloak/service.yaml + port-forward
+    # instructions), so tokens carry that as the issuer. Inside the cluster, this service
+    # fetches signing keys via Keycloak's internal Service DNS name instead.
     issuer-uri: http://localhost:8180/realms/payment-microservice
     jwk-set-uri: http://keycloak:8080/realms/payment-microservice/protocol/openid-connect/certs
 
@@ -42,6 +46,7 @@ management:
       type: b3
   zipkin:
     tracing:
+      # Same Service name as docker-compose's zipkin container (see k8s/zipkin/service.yaml).
       endpoint: http://zipkin:9411/api/v2/spans
   endpoints:
     web:
@@ -51,15 +56,20 @@ management:
           - info
           - prometheus
 
+# We don't run service-registry (Eureka) in Kubernetes: services communicate
+# exclusively via Kafka events (SAGA), and there's no api-gateway in this
+# cluster either, so there's no consumer of Eureka's service registry here.
+# Disabling the client entirely avoids useless retry/error logs trying to
+# reach a service-registry:8761 that doesn't exist in K8s.
 eureka:
   client:
-    service-url:
-      defaultZone: http://service-registry:8761/eureka/
+    enabled: false
 
 client-service:
   outbox:
     retry-delay-ms: 43200000
   keycloak:
+    # Same Service name as docker-compose's keycloak container (see k8s/keycloak/service.yaml).
     token-uri: http://keycloak:8080/realms/payment-microservice/protocol/openid-connect/token
     admin-base-uri: http://keycloak:8080/admin/realms/payment-microservice
     client-id: client-service

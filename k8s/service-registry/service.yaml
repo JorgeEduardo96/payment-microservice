@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: service-registry
+spec:
+  # ClusterIP (the default type): only reachable from inside the cluster,
+  # which is exactly what we want — other services will call it via
+  # "http://service-registry:8761", relying on K8s' internal DNS instead of
+  # Eureka's own registration/discovery mechanism.
+  type: ClusterIP
+  selector:
+    app: service-registry
+  ports:
+    - port: 8761
+      targetPort: 8761

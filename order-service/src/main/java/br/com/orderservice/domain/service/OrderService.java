@@ -26,6 +26,7 @@ public class OrderService {
     private final ClientRepository clientRepository;
     private final OrderSagaRepository sagaRepository;
     private final ApplicationEventPublisher publisher;
+    private final OrderMetrics orderMetrics;
 
     @Transactional
     public OrderOutputDTO createOrder(OrderInputDTO dto) {
@@ -68,6 +69,7 @@ public class OrderService {
 
         if (OrderStatus.PENDING_PAYMENT.equals(order.status())) {
             repository.processPayment(orderId, OrderStatus.FAILED);
+            orderMetrics.incrementStatus(OrderStatus.FAILED);
         }
     }
 

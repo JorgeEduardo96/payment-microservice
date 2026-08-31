@@ -1,0 +1,87 @@
+{
+  "id": null,
+  "uid": "business-metrics",
+  "title": "Business Metrics",
+  "tags": ["business", "payment-microservice"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "10s",
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Clients Registered (total)",
+      "type": "stat",
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum(clients_registered_total)",
+          "legendFormat": "clients registered"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Orders Paid (total)",
+      "type": "stat",
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "gridPos": { "h": 8, "w": 6, "x": 6, "y": 0 },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "fixed", "fixedColor": "green" } }
+      },
+      "targets": [
+        {
+          "expr": "sum(orders_status_total{status=\"PAID\"})",
+          "legendFormat": "orders paid"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Orders Failed (total)",
+      "type": "stat",
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 0 },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "fixed", "fixedColor": "red" } }
+      },
+      "targets": [
+        {
+          "expr": "sum(orders_status_total{status=\"FAILED\"})",
+          "legendFormat": "orders failed"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Client Registration Rate (per second)",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "expr": "sum(rate(clients_registered_total[5m]))",
+          "legendFormat": "clients/sec"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Order Status Rate by Outcome (per second)",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        {
+          "expr": "sum by (status) (rate(orders_status_total[5m]))",
+          "legendFormat": "{{status}}"
+        }
+      ]
+    }
+  ]
+}

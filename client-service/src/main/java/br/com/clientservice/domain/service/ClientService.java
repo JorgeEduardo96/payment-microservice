@@ -28,6 +28,7 @@ public class ClientService {
     private final ObjectMapper objectMapper;
     private final ApplicationEventPublisher publisher;
     private final KeycloakUserProvisioningService keycloakUserProvisioningService;
+    private final ClientMetrics clientMetrics;
 
     @Transactional
     public ClientOutputDTO insert(ClientCreateInputDTO inputDTO) {
@@ -52,6 +53,7 @@ public class ClientService {
             throw new BusinessException("Failed to complete client registration: " + e.getMessage(), e);
         }
 
+        clientMetrics.incrementRegistered();
         return persisted;
     }
 

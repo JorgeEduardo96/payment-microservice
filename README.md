@@ -2,7 +2,8 @@
 
 ## Overview
 
-This project demonstrates a modern and resilient microservices architecture using **Spring Boot**, **Gradle**, **Apache Kafka**
+This project demonstrates a modern and resilient microservices architecture using **Spring Boot**, **Gradle**, **Apache
+Kafka**
 as the event backbone, **WebSocket (STOMP)** for real-time, push-based communication with the frontend, and **Keycloak**
 for authentication/authorization. It follows best practices for scalability, decoupling, and observability with a
 didactic purpose.
@@ -19,7 +20,8 @@ didactic purpose.
     - Kafka for event-driven communication.
     - WebSocket (STOMP) for real-time notifications pushed to the frontend.
 - **Authentication & Authorization:** Keycloak issues JWTs (Authorization Code + PKCE from the browser); the API Gateway
-  validates every request and enforces role-based access (see [Authentication & Authorization](#authentication--authorization)).
+  validates every request and enforces role-based access
+  (see [Authentication & Authorization](#authentication--authorization)).
 - **Shared Library:** A common Gradle library with Kafka utilities, validations, and custom exceptions.
 
 ![Payment Microservice's diagram](payment_microservice_diagram.png)
@@ -43,8 +45,9 @@ didactic purpose.
 
 ## Transactional Outbox Pattern
 
-`client-service` and `payment-service` both persist a domain change and the corresponding Kafka event **in the same local
-database transaction**, instead of writing to the database and publishing to Kafka as two separate, non-atomic steps.
+`client-service` and `payment-service` both persist a domain change and the corresponding Kafka event **in the same
+local database transaction**, instead of writing to the database and publishing to Kafka as two separate, non-atomic
+steps.
 
 ### The problem it solves
 
@@ -61,29 +64,30 @@ published for a change that never actually got committed). This is the classic *
 
 ### How it works here
 
-1. The business write (e.g. inserting a `Client` or a `Payment`) and an `outbox` row describing the event to be published
-   are persisted **in the same `@Transactional` method**, so they either both commit or both roll back together.
+1. The business write (e.g. inserting a `Client` or a `Payment`) and an `outbox` row describing the event to be
+   published are persisted **in the same `@Transactional` method**, so they either both commit or both roll back
+   together.
 2. Once that transaction **commits**, a `@TransactionalEventListener(phase = AFTER_COMMIT)` fires and hands the new
    outbox row's id to an `OutboxPublisher`, which sends it to Kafka and marks it `PUBLISHED` (or `FAILED`, with the
    error recorded, if Kafka itself is unreachable at that moment).
 3. A scheduled `OutboxRecoveryJob` periodically re-publishes any `PENDING`/`FAILED` outbox rows older than a short grace
-   period — this is what makes the pattern resilient to Kafka being down at decision-time: the event is never lost,
-   only delayed, because it was durably persisted before anything ever touched Kafka.
+   period — this is what makes the pattern resilient to Kafka being down at decision-time: the event is never lost, only
+   delayed, because it was durably persisted before anything ever touched Kafka.
 
 ### The `outbox` table
 
-| Column           | Purpose                                                                                          |
-|------------------|---------------------------------------------------------------------------------------------------|
-| `id`             | Outbox row identity; also what the `AFTER_COMMIT` listener/publisher key off of.                  |
-| `aggregate_type` | The kind of entity the event is about (e.g. `Client`, `Payment`) — useful for tracing/auditing.    |
-| `aggregate_id`   | The id of that entity, so a given event can be traced back to the record that caused it.           |
-| `event_type`     | Which topic/decision this row maps to (e.g. `client-created`, `payment-processed`).                |
-| `payload`        | The serialized event body actually sent to Kafka — captured at decision time, not recomputed later.|
+| Column           | Purpose                                                                                             |
+|------------------|-----------------------------------------------------------------------------------------------------|
+| `id`             | Outbox row identity; also what the `AFTER_COMMIT` listener/publisher key off of.                    |
+| `aggregate_type` | The kind of entity the event is about (e.g. `Client`, `Payment`) — useful for tracing/auditing.     |
+| `aggregate_id`   | The id of that entity, so a given event can be traced back to the record that caused it.            |
+| `event_type`     | Which topic/decision this row maps to (e.g. `client-created`, `payment-processed`).                 |
+| `payload`        | The serialized event body actually sent to Kafka — captured at decision time, not recomputed later. |
 | `status`         | `PENDING` → `PROCESSING` → `PUBLISHED`, or `FAILED` if Kafka rejected/timed out the send.           |
-| `attempts`       | How many times a (re)publish was attempted — visibility into flaky sends.                          |
-| `last_error`     | The last failure message, for troubleshooting without needing to dig through logs.                 |
-| `created_at`     | Drives the recovery job's "older than N seconds" retry query.                                      |
-| `published_at`   | Set once the send actually succeeds — an audit trail of when the event really left the building.   |
+| `attempts`       | How many times a (re)publish was attempted — visibility into flaky sends.                           |
+| `last_error`     | The last failure message, for troubleshooting without needing to dig through logs.                  |
+| `created_at`     | Drives the recovery job's "older than N seconds" retry query.                                       |
+| `published_at`   | Set once the send actually succeeds — an audit trail of when the event really left the building.    |
 
 ### Why `payment-service` needed more than just an outbox table
 
@@ -97,16 +101,16 @@ spot, and it was published to Kafka directly — nothing was ever persisted. Tha
 
 Since the outbox pattern requires *something transactional to piggyback on*, adding it here meant introducing a real
 `payment` table first, with `order_id` as a **unique, database-enforced idempotency key** — not just an in-app check,
-since two concurrent requests for the same order could both pass an application-level lookup before either commits.
-The DB-level unique constraint (and the `DataIntegrityViolationException` it triggers) is the real safety net for that
-race. The now-durable decision is published via the same outbox mechanism described above.
+since two concurrent requests for the same order could both pass an application-level lookup before either commits. The
+DB-level unique constraint (and the `DataIntegrityViolationException` it triggers) is the real safety net for that race.
+The now-durable decision is published via the same outbox mechanism described above.
 
 ### DLQ and outbox are complementary, not redundant
 
-The outbox pattern addresses **producer-side** reliability (never losing a decision once it's made). The existing
-**Dead Letter Queue** (`DeadLetterPublishingRecoverer`) addresses a different, **consumer-side** failure mode: a
-message that was published successfully but that a *consumer* repeatedly fails to process (e.g. a poison-pill payload
-or a transient downstream error). Both mechanisms stay in place, each covering a different half of the pipeline.
+The outbox pattern addresses **producer-side** reliability (never losing a decision once it's made). The existing **Dead
+Letter Queue** (`DeadLetterPublishingRecoverer`) addresses a different, **consumer-side** failure mode: a message that
+was published successfully but that a *consumer* repeatedly fails to process (e.g. a poison-pill payload or a transient
+downstream error). Both mechanisms stay in place, each covering a different half of the pipeline.
 
 ---
 
@@ -122,8 +126,8 @@ partway through.
 Without a saga, the order → payment flow relied on the choreography between services working out on its own:
 `order-service` calls `payment-service` via gRPC, which asynchronously publishes the result to Kafka, which
 `order-service` consumes to update the order's final status. If the gRPC call failed, the Kafka event was lost, or
-`order-service` was down when the event arrived, there was **no mechanism tracking that anything had gone wrong** —
-the order would simply stay in `PENDING_PAYMENT` forever, with no compensating action ever taking place.
+`order-service` was down when the event arrived, there was **no mechanism tracking that anything had gone wrong** — the
+order would simply stay in `PENDING_PAYMENT` forever, with no compensating action ever taking place.
 
 ### How it works here
 
@@ -135,29 +139,29 @@ the order would simply stay in `PENDING_PAYMENT` forever, with no compensating a
     - Right before the gRPC call to `payment-service` → `PAYMENT_REQUESTED`.
     - The Kafka `payment-topic` event is consumed → `COMPLETED` (payment `PAID`) or `COMPENSATED` (payment
       `FAILED`), matching the order status update transactionally.
-    - The gRPC call itself fails after Resilience4j's retries are exhausted → the order is cancelled and the saga
-      is marked `COMPENSATED` by the `@Retry` fallback method.
+    - The gRPC call itself fails after Resilience4j's retries are exhausted → the order is cancelled and the saga is
+      marked `COMPENSATED` by the `@Retry` fallback method.
 3. **`OrderSagaTimeoutJob`** — the piece that actually closes the "stuck forever" gap: a `@Scheduled` job that
    periodically looks for sagas that have been sitting in `PAYMENT_REQUESTED` for longer than a configurable timeout
-   (e.g. the Kafka event never arrived) and **compensates them automatically** — cancelling the order instead of
-   leaving it pending indefinitely. If the compensation itself fails (e.g. the database is temporarily unreachable),
-   the saga's retry count is incremented until a configurable maximum, at which point it's marked `FAILED` — a
-   terminal state signalling that manual intervention is needed, instead of being retried forever.
+   (e.g. the Kafka event never arrived) and **compensates them automatically** — cancelling the order instead of leaving
+   it pending indefinitely. If the compensation itself fails (e.g. the database is temporarily unreachable), the saga's
+   retry count is incremented until a configurable maximum, at which point it's marked `FAILED` — a terminal state
+   signalling that manual intervention is needed, instead of being retried forever.
 
 ```
 createOrder()  ──►  STARTED  ──►  PAYMENT_REQUESTED  ──┬──►  COMPLETED     (payment PAID via Kafka)
-                                                        ├──►  COMPENSATED  (payment FAILED via Kafka, or gRPC
-                                                        │                   retries exhausted, or timeout job fired)
-                                                        └──►  FAILED       (compensation itself kept failing)
+                                                       ├──►  COMPENSATED  (payment FAILED via Kafka, or gRPC
+                                                       │                   retries exhausted, or timeout job fired)
+                                                       └──►  FAILED       (compensation itself kept failing)
 ```
 
 ### Why orchestration, not choreography
 
 The saga is **orchestrated** by `order-service` (it owns the saga state and drives every transition) rather than
-**choreographed** (each service reacting independently to events with no central view). With only two services
-involved, choreography would have worked for the happy path, but it offers no natural place to put a timeout/recovery
-mechanism — there's no single owner responsible for noticing "this transaction never finished." Orchestration gives
-the saga state machine a home (`order-service`) and, with it, a natural place for `OrderSagaTimeoutJob` to live.
+**choreographed** (each service reacting independently to events with no central view). With only two services involved,
+choreography would have worked for the happy path, but it offers no natural place to put a timeout/recovery mechanism —
+there's no single owner responsible for noticing "this transaction never finished." Orchestration gives the saga state
+machine a home (`order-service`) and, with it, a natural place for `OrderSagaTimeoutJob` to live.
 
 ### Configuration
 
@@ -173,20 +177,21 @@ order-service:
 
 ## Authentication & Authorization
 
-**Keycloak** (`keycloak/realm-export.json`) is the identity provider for the whole platform. The frontend logs in via the
-standard **Authorization Code + PKCE** flow; the API Gateway validates the resulting JWT on every request and maps
+**Keycloak** (`keycloak/realm-export.json`) is the identity provider for the whole platform. The frontend logs in via
+the standard **Authorization Code + PKCE** flow; the API Gateway validates the resulting JWT on every request and maps
 Keycloak's `realm_access.roles` claim into Spring Security authorities.
 
 **Realm roles:**
 
-| Role     | Who                                                          | Access                                                                                              |
-|----------|---------------------------------------------------------------|------------------------------------------------------------------------------------------------------|
-| `ADMIN`  | Staff managing the platform                                  | Full access, including client registration (`POST`/`PUT /client`) and the admin notification feed   |
-| `USER`   | Regular staff (read-only)                                    | Can read clients/orders, cannot register/edit clients                                                |
-| `CLIENT` | A registered customer (see below)                             | Can only see and receive real-time updates about their own orders                                    |
+| Role     | Who                               | Access                                                                                            |
+|----------|-----------------------------------|---------------------------------------------------------------------------------------------------|
+| `ADMIN`  | Staff managing the platform       | Full access, including client registration (`POST`/`PUT /client`) and the admin notification feed |
+| `USER`   | Regular staff (read-only)         | Can read clients/orders, cannot register/edit clients                                             |
+| `CLIENT` | A registered customer (see below) | Can only see and receive real-time updates about their own orders                                 |
 
-**Client registration also provisions a login.** When a client is registered (`POST /client`), `client-service` also creates
-a matching Keycloak user (role `CLIENT`, default password `client123`, username = the client's email) via a dedicated
+**Client registration also provisions a login.** When a client is registered (`POST /client`), `client-service` also
+creates a matching Keycloak user (role `CLIENT`, default password `client123`, username = the client's email) via a
+dedicated
 `client-service` service account scoped only to `manage-users`/`view-realm` on this realm — never the realm superadmin.
 The client's business-entity id is stored as a custom `clientId` user attribute and surfaced in the JWT via a protocol
 mapper, so the frontend and `notification-service` can tell which Client a logged-in user corresponds to.
@@ -232,7 +237,8 @@ The frontend supports **English, Portuguese, and Spanish** via `vue-i18n`.
     - **Zipkin** (distributed tracing).
     - **Prometheus + Grafana** (metrics and dashboards).
 - Docker containers orchestrated via `docker compose`.
-- Also deployable to **Kubernetes** (Minikube) without Eureka/API Gateway — see [Kubernetes (Minikube)](#kubernetes-minikube).
+- Also deployable to **Kubernetes** (Minikube) without Eureka/API Gateway —
+  see [Kubernetes (Minikube)](#kubernetes-minikube).
 - CI with **GitHub Actions** — build, E2E tests, and push on the `main` branch.
 - **Eureka** for service discovery.
 - Global validations and standardized exception handling.
@@ -294,28 +300,28 @@ The project follows the **test pyramid** with three layers:
 - Tools: REST Assured, Awaitility, Docker Compose
 - The full stack — including a Keycloak instance seeded from `keycloak/realm-export-e2e.json` — is started automatically
   before the tests and shut down after
-- `BaseE2ETest` fetches a real `admin` access token from Keycloak once and attaches it to every request by default
-  (via `RestAssured.requestSpecification`), so most test classes don't need to know anything about auth. The `frontend`
+- `BaseE2ETest` fetches a real `admin` access token from Keycloak once and attaches it to every request by default (via
+  `RestAssured.requestSpecification`), so most test classes don't need to know anything about auth. The `frontend`
   client only has direct (password) grants enabled in this test realm — the real app never uses that flow.
 
 **What is tested:**
 
-| Scenario                                          | Endpoint                 |
-|----------------------------------------------------|--------------------------|
-| Create client                                      | `POST /client`           |
-| Fetch client by ID                                 | `GET /client/{id}`       |
-| Update client                                      | `PUT /client/{id}`       |
-| Create order (starts as `PENDING_PAYMENT`)         | `POST /order`            |
-| Payment processed asynchronously via Kafka         | `GET /order/client/{id}` |
-| Final status matches payment-service logic         | `GET /order/client/{id}` |
-| List all orders for a client                       | `GET /order/client/{id}` |
-| Validation and 404 scenarios                       | Various                  |
-| Request without a token is rejected (401)          | `POST /client`           |
-| Non-admin (`USER`) can't register clients (403)    | `POST /client`           |
-| Non-admin can still read clients (200)             | `GET /client`            |
+| Scenario                                        | Endpoint                 |
+|-------------------------------------------------|--------------------------|
+| Create client                                   | `POST /client`           |
+| Fetch client by ID                              | `GET /client/{id}`       |
+| Update client                                   | `PUT /client/{id}`       |
+| Create order (starts as `PENDING_PAYMENT`)      | `POST /order`            |
+| Payment processed asynchronously via Kafka      | `GET /order/client/{id}` |
+| Final status matches payment-service logic      | `GET /order/client/{id}` |
+| List all orders for a client                    | `GET /order/client/{id}` |
+| Validation and 404 scenarios                    | Various                  |
+| Request without a token is rejected (401)       | `POST /client`           |
+| Non-admin (`USER`) can't register clients (403) | `POST /client`           |
+| Non-admin can still read clients (200)          | `GET /client`            |
 
-**Important:** the `order-service` maintains its own client database populated via Kafka events.
-The E2E tests account for this by waiting for the Kafka event to be consumed before placing an order.
+**Important:** the `order-service` maintains its own client database populated via Kafka events. The E2E tests account
+for this by waiting for the Kafka event to be consumed before placing an order.
 
 **Run E2E tests locally:**
 
@@ -330,23 +336,22 @@ The E2E tests account for this by waiting for the Kafka event to be consumed bef
 
 - Location: `e2e-browser-tests/`
 - Tools: Playwright for Java, JUnit 5, Docker Compose
-- Unlike `e2e-tests` (which drives the REST API directly and authenticates via ROPC), this module
-  drives a real Chromium browser against the actual frontend, going through the real
-  **Authorization Code + PKCE** login flow — navigating to the app, filling Keycloak's hosted
-  login form, and asserting on what a user actually sees.
+- Unlike `e2e-tests` (which drives the REST API directly and authenticates via ROPC), this module drives a real Chromium
+  browser against the actual frontend, going through the real **Authorization Code + PKCE** login flow — navigating to
+  the app, filling Keycloak's hosted login form, and asserting on what a user actually sees.
 - The full stack — including a `frontend` container — is started from `docker-compose-e2e.yml`
   automatically before the tests and shut down after, the same way `e2e-tests` does.
 
 **What is tested:**
 
-| Scenario                                                                  |
-|-----------------------------------------------------------------------------|
-| Login/logout through the real Keycloak hosted login page                 |
+| Scenario                                                                                                                                                                          |
+|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Login/logout through the real Keycloak hosted login page                                                                                                                          |
 | `ADMIN` sees the full navigation (Clients, Orders); `USER`/`CLIENT` don't see the Clients nav item and are blocked (with a warning toast) if they navigate to `/clients` directly |
-| `ADMIN` creates and edits a client through the UI                        |
-| `ADMIN`'s notification bell receives a "client created" notification in real time |
-| A `CLIENT` places an order through the UI and sees its status flip from *Pending Payment* to *Paid*/*Failed* **without a manual refresh**, driven entirely by the WebSocket push |
-| That same `CLIENT` receives their own payment confirmation/failure notification in real time |
+| `ADMIN` creates and edits a client through the UI                                                                                                                                 |
+| `ADMIN`'s notification bell receives a "client created" notification in real time                                                                                                 |
+| A `CLIENT` places an order through the UI and sees its status flip from *Pending Payment* to *Paid*/*Failed* **without a manual refresh**, driven entirely by the WebSocket push  |
+| That same `CLIENT` receives their own payment confirmation/failure notification in real time                                                                                      |
 
 **Run browser E2E tests locally:**
 
@@ -361,12 +366,11 @@ The E2E tests account for this by waiting for the Kafka event to be consumed bef
 > Like `e2e-tests`, this module is excluded from `./gradlew build` and runs as a dedicated CI step,
 > after the Docker images are built.
 
-**Watching the tests run (`-Dheadless=false`) on Windows:** Playwright's bundled Chromium requires
-the Microsoft Visual C++ Redistributable (x64) to launch on Windows; without it, the browser fails
-to start with a "side-by-side configuration" error. `BaseBrowserE2ETest` detects Windows and falls
-back to launching the system's installed Microsoft Edge instead (`channel: "msedge"`, same Chromium
-engine underneath) so the suite works out of the box — you'll see an Edge window, not Chromium.
-Installing the VC++ Redistributable lets Playwright's own Chromium run instead, if preferred.
+**Watching the tests run (`-Dheadless=false`) on Windows:** Playwright's bundled Chromium requires the Microsoft Visual
+C++ Redistributable (x64) to launch on Windows; without it, the browser fails to start with a "side-by-side
+configuration" error. `BaseBrowserE2ETest` detects Windows and falls back to launching the system's installed Microsoft
+Edge instead (`channel: "msedge"`, same Chromium engine underneath) so the suite works out of the box — you'll see an
+Edge window, not Chromium. Installing the VC++ Redistributable lets Playwright's own Chromium run instead, if preferred.
 CI (Linux) always uses the bundled Chromium.
 
 ### Frontend Tests
@@ -399,25 +403,25 @@ CI (Linux) always uses the bundled Chromium.
 4. **Access the services:**
 
 | Service     | URL                                   |
-|-------------|----------------------------------------|
-| Frontend    | http://localhost:8000                   |
-| API Gateway | http://localhost:8080                   |
-| Keycloak    | http://localhost:8180 (admin / admin)   |
-| Eureka      | http://localhost:8761                   |
-| Kafka UI    | http://localhost:8085                   |
-| Zipkin      | http://localhost:9411                   |
-| Grafana     | http://localhost:3000 (admin / admin)   |
-| Prometheus  | http://localhost:9091                   |
+|-------------|---------------------------------------|
+| Frontend    | http://localhost:8000                 |
+| API Gateway | http://localhost:8080                 |
+| Keycloak    | http://localhost:8180 (admin / admin) |
+| Eureka      | http://localhost:8761                 |
+| Kafka UI    | http://localhost:8085                 |
+| Zipkin      | http://localhost:9411                 |
+| Grafana     | http://localhost:3000 (admin / admin) |
+| Prometheus  | http://localhost:9091                 |
 
 5. **Log in to the frontend** with one of the seeded users (see `keycloak/realm-export.json`):
 
-| Username | Password    | Role(s)       |
-|----------|-------------|---------------|
-| `admin`  | `admin123`  | `ADMIN`, `USER` |
-| `demo`   | `demo123`   | `USER`        |
+| Username | Password   | Role(s)         |
+|----------|------------|-----------------|
+| `admin`  | `admin123` | `ADMIN`, `USER` |
+| `demo`   | `demo123`  | `USER`          |
 
-   Registering a client from the app (as `admin`) also creates a matching Keycloak login for that client
-   (username = the client's email, password `client123`, role `CLIENT`).
+Registering a client from the app (as `admin`) also creates a matching Keycloak login for that client (username = the
+client's email, password `client123`, role `CLIENT`).
 
 ---
 
@@ -460,13 +464,13 @@ k8s/
 - `order-service`'s gRPC client to `payment-service` uses the `dns:///payment-service:9090` URI scheme, **not**
   `static://` — the latter only accepts literal IPs and does not resolve hostnames, which breaks against Kubernetes
   Service DNS names.
-- The frontend's `nginx.conf` is unchanged (still bakes in the `api-gateway`-based routing used by `docker compose`,
-  so the same Docker image serves both environments). Its Kubernetes-specific routing (direct calls to
+- The frontend's `nginx.conf` is unchanged (still bakes in the `api-gateway`-based routing used by `docker compose`, so
+  the same Docker image serves both environments). Its Kubernetes-specific routing (direct calls to
   `client-service`, `order-service`, `notification-service`, no gateway) lives in a `ConfigMap`
   (`k8s/frontend/nginx-configmap.yaml`) mounted over `/etc/nginx/conf.d/default.conf` at runtime.
-  - `nginx`'s `resolver` directive does **not** honor `/etc/resolv.conf`'s `search` domains the way a normal libc
-    resolver does, so the ConfigMap uses fully-qualified Service names
-    (e.g. `client-service.default.svc.cluster.local`) rather than short names.
+    - `nginx`'s `resolver` directive does **not** honor `/etc/resolv.conf`'s `search` domains the way a normal libc
+      resolver does, so the ConfigMap uses fully-qualified Service names (e.g.
+      `client-service.default.svc.cluster.local`) rather than short names.
 
 ### Running it
 
@@ -493,12 +497,12 @@ kubectl apply -f k8s/frontend/nginx-configmap.yaml -f k8s/frontend/deployment.ya
 Minikube's Docker driver doesn't expose `NodePort`s on the host directly — reach each service with
 `kubectl port-forward`:
 
-| Service      | Command                                     | URL                     |
-|--------------|----------------------------------------------|-------------------------|
-| Frontend     | `kubectl port-forward svc/frontend 8000:80`   | http://localhost:8000   |
-| Keycloak     | `kubectl port-forward svc/keycloak 8180:8080` | http://localhost:8180   |
-| Kafka UI     | `kubectl port-forward svc/kafka-ui 8085:8080` | http://localhost:8085   |
-| Grafana      | `kubectl port-forward svc/grafana 3000:80`    | http://localhost:3000   |
+| Service  | Command                                       | URL                   |
+|----------|-----------------------------------------------|-----------------------|
+| Frontend | `kubectl port-forward svc/frontend 8000:80`   | http://localhost:8000 |
+| Keycloak | `kubectl port-forward svc/keycloak 8180:8080` | http://localhost:8180 |
+| Kafka UI | `kubectl port-forward svc/kafka-ui 8085:8080` | http://localhost:8085 |
+| Grafana  | `kubectl port-forward svc/grafana 3000:80`    | http://localhost:3000 |
 
 `client-service`, `order-service`, and `notification-service` can also be port-forwarded individually for direct
 API/WebSocket testing, but normally the frontend is the single entry point a browser needs.

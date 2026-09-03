@@ -24,7 +24,7 @@ didactic purpose.
   (see [Authentication & Authorization](#authentication--authorization)).
 - **Shared Library:** A common Gradle library with Kafka utilities, validations, and custom exceptions.
 
-![Payment Microservice's diagram](payment_microservice_diagram.png)
+![Payment Microservice's diagram](architecture_diagram.png)
 
 ---
 
